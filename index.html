@@ -166,6 +166,8 @@ canvas,svg{max-width:100%}
  .card:has(#analyticsPortfolioRows) table,.card:has(#analyticsAssetRows) table{min-width:460px}
 }
 
+
+.pnl-mode-switch{display:inline-flex;gap:2px;margin-left:7px;padding:2px;border:1px solid var(--line);border-radius:7px;vertical-align:middle}.pnl-mode-switch button{padding:2px 7px;border:0;border-radius:5px;background:transparent;color:var(--muted);font:11px ui-monospace,monospace;cursor:pointer}.pnl-mode-switch button.active{background:var(--green);color:#07120e}.portfolio-pnl-metric>span{display:flex;align-items:center;flex-wrap:wrap;gap:2px}
 </style>
 </head>
 <body>
@@ -252,7 +254,7 @@ canvas,svg{max-width:100%}
   <!-- 2. Portfolio summary: four equal-width cards -->
   <div class="optiongrid" style="margin:0 0 12px">
    <div class="metric"><span>Вартість портфеля</span><b id="portValue">$0</b></div>
-   <div class="metric"><span>Нереалізований P/L</span><b id="portPnl">$0</b></div>
+   <div class="metric portfolio-pnl-metric"><span>Нереалізований P/L <span class="pnl-mode-switch" role="group" aria-label="Формат P&L"><button type="button" id="pnlModeUsd" class="active" aria-pressed="true">$</button><button type="button" id="pnlModePct" aria-pressed="false">%</button></span></span><b id="portPnl">$0</b></div>
    <div class="metric"><span>Реалізований P/L</span><b id="portRealized">$0</b></div>
    <div class="metric"><span>Позицій</span><b id="portCount">0</b></div>
   </div>
@@ -389,7 +391,8 @@ canvas,svg{max-width:100%}
  <div class="notice">Експорт створює один JSON-файл для перенесення між браузерами й пристроями. Імпорт замінює поточні збережені дані даними з файлу. Перед заміною створюється локальна аварійна копія та завантажується файл поточного стану. Ринкові котирування не включаються — їх можна отримати повторно з API.</div>
 </section>
 <section class="card span-12" id="cloudAdminPanel" hidden>
- <div class="cardhead"><h2>CLOUD ADMIN · КОРИСТУВАЧІ ТА ДОСТУП</h2><span class="tag">SERVER-SIDE PERMISSIONS</span></div>
+ <div class="cardhead"><h2><button type="button" class="collapse-toggle" data-collapse-target="cloudAdminContent" data-collapse-key="cloud_admin" aria-expanded="true" aria-controls="cloudAdminContent"><span>АДМІН-ПАНЕЛЬ · КОРИСТУВАЧІ ТА ДОСТУП</span><span class="collapse-chevron" aria-hidden="true">⌄</span></button></h2><span class="tag">НАТИСНИ, ЩОБ ЗГОРНУТИ</span></div>
+ <div class="collapse-content" id="cloudAdminContent">
  <div class="row" style="align-items:end;gap:10px;flex-wrap:wrap">
   <div class="field" style="min-width:260px;flex:1"><label for="cloudAdminUser">Користувач</label><select id="cloudAdminUser"><option value="">Новий користувач</option></select></div>
   <div class="field" style="min-width:260px;flex:1"><label for="cloudAdminEmail">Email</label><input id="cloudAdminEmail" type="email" placeholder="user@example.com"></div>
@@ -400,9 +403,10 @@ canvas,svg{max-width:100%}
  <div id="cloudAdminGlobal" class="grid" style="margin-top:12px"></div>
  <h3>Права на окремі портфелі</h3><div id="cloudAdminPortfolioRights" class="grid"></div>
  <div class="row" style="margin-top:12px"><button id="cloudAdminSave" class="primary" type="button">Зберегти доступ</button><button id="cloudAdminAudit" type="button">Показати журнал адміністрування</button></div>
- <h3>Одноразове перенесення даних</h3><div class="row"><input id="cloudMigrationFile" type="file" accept=".json,application/json"><button id="cloudMigrationImport" type="button">Імпортувати Cloud payload</button></div><div class="notice">Обери migration-payload-v1.0.json з пакета. Імпорт не перезаписує активні портфелі; перед запуском зроби резервну копію приватного GitHub-репозиторію.</div>
+ <h3>Одноразове перенесення даних</h3><div class="row"><input id="cloudMigrationFile" type="file" accept=".json,application/json"><button id="cloudMigrationImport" type="button">Імпортувати дані в Cloud</button></div><div class="notice">Обери migration-payload-v1.0.json з пакета. Імпорт не перезаписує активні портфелі; перед запуском зроби резервну копію приватного GitHub-репозиторію.</div>
  <pre id="cloudAdminAuditOutput" style="white-space:pre-wrap;max-height:240px;overflow:auto"></pre>
  <div class="notice" id="cloudAdminStatus">Права кожного портфеля задаються окремо. Нові портфелі не відкриваються автоматично.</div>
+</div>
 </section>
 <div class="footer"><span>Crypto Terminal · v1.12.4 · spot + options ledger</span><span>API-ключі не потрібні · лише публічні ринкові дані</span></div>
 </div>
@@ -488,6 +492,7 @@ portfolios.forEach(p=>{
 });
 let activePortfolio=localStorage.getItem('ct_last_active_portfolio')||portfolios[0]?.id||'all';
 let portfolioSort={key:null,dir:0};
+let portfolioPnlMode=localStorage.getItem('ct_portfolio_pnl_mode')==='pct'?'pct':'usd';
 let selectedAggregateIds=JSON.parse(localStorage.getItem('ct_aggregate_portfolios')||'null');
 if(!Array.isArray(selectedAggregateIds))selectedAggregateIds=portfolios.map(p=>p.id);
 let tickerPairs=[],bybitTickerPairs=[],bingxTickerPairs=[];
@@ -676,14 +681,19 @@ function renderPortfolio(){
  const rowMetrics=h=>{const px=h.stable?1:(prices[h.asset]?.price||0),value=px*h.qty,invested=h.stable?h.qty:h.cost,pnl=h.stable?0:value-h.cost;return {value,invested,pnl}};
  if(portfolioSort.key&&portfolioSort.dir){displayRows=[...displayRows].sort((a,b)=>{const av=rowMetrics(a)[portfolioSort.key],bv=rowMetrics(b)[portfolioSort.key];return (av-bv)*portfolioSort.dir;});}
  $('portfolioRows').innerHTML=displayRows.length?displayRows.map(h=>{
-  const px=h.stable?1:(prices[h.asset]?.price||0),val=px*h.qty,pl=h.stable?0:val-h.cost,invested=h.stable?h.qty:h.cost;
-  return `<tr><td class="asset">${escapeHtml(h.asset)}<small>${h.stable?'Stablecoin wallet': [...new Set(h.owners)].join(', ')}</small></td><td class="num">${fmt(h.qty,5)}</td><td class="num">${h.stable?money(1):money(h.entry)}</td><td class="num">${money(px)}</td><td class="num">${money(val)}</td><td class="num">${money(invested)}</td><td class="num ${pl>=0?'positive':'negative'}">${h.stable?money(0):(px?(pl>=0?'+':'')+money(pl):'—')}</td><td>${h.stable?'—':`<button class="smallbtn" data-edit-spot="${escapeHtml(h.asset)}">Редагувати</button>`}</td></tr>`;
+  const px=h.stable?1:(prices[h.asset]?.price||0),val=px*h.qty,pl=h.stable?0:val-h.cost,invested=h.stable?h.qty:h.cost,pct=invested>0?pl/invested*100:0;
+  const pnlText=portfolioPnlMode==='pct'?(h.stable?'0.00%':`${pct>=0?'+':''}${pct.toFixed(2)}%`):(h.stable?money(0):(px?(pl>=0?'+':'')+money(pl):'—'));
+  return `<tr><td class="asset">${escapeHtml(h.asset)}<small>${h.stable?'Stablecoin wallet': [...new Set(h.owners)].join(', ')}</small></td><td class="num">${fmt(h.qty,5)}</td><td class="num">${h.stable?money(1):money(h.entry)}</td><td class="num">${money(px)}</td><td class="num">${money(val)}</td><td class="num">${money(invested)}</td><td class="num ${pl>=0?'positive':'negative'}">${pnlText}</td><td>${h.stable?'—':`<button class="smallbtn" data-edit-spot="${escapeHtml(h.asset)}">Редагувати</button>`}</td></tr>`;
  }).join(''):'<tr><td colspan="8" class="empty">У цьому портфелі немає активів вище порога 0,10 USDT</td></tr>';
  $('sortValueIcon').textContent=portfolioSort.key==='value'?(portfolioSort.dir===-1?'↓':'↑'):'↕';$('sortPnlIcon').textContent=portfolioSort.key==='pnl'?(portfolioSort.dir===-1?'↓':'↑'):'↕';$('sortInvestedIcon').textContent=portfolioSort.key==='invested'?(portfolioSort.dir===-1?'↓':'↑'):'↕';$('sortValue').classList.toggle('active',portfolioSort.key==='value');$('sortPnl').classList.toggle('active',portfolioSort.key==='pnl');$('sortInvested').classList.toggle('active',portfolioSort.key==='invested');
  $('sortValue').onclick=()=>{portfolioSort=portfolioSort.key!=='value'?{key:'value',dir:-1}:portfolioSort.dir===-1?{key:'value',dir:1}:{key:null,dir:0};renderPortfolio()};$('sortPnl').onclick=()=>{portfolioSort=portfolioSort.key!=='pnl'?{key:'pnl',dir:-1}:portfolioSort.dir===-1?{key:'pnl',dir:1}:{key:null,dir:0};renderPortfolio()};$('sortInvested').onclick=()=>{portfolioSort=portfolioSort.key!=='invested'?{key:'invested',dir:-1}:portfolioSort.dir===-1?{key:'invested',dir:1}:{key:null,dir:0};renderPortfolio()};
  $('portValue').textContent=money(selTotals.value);
- $('portPnl').textContent=(selTotals.unrealized>=0?'+':'')+money(selTotals.unrealized);
+ const selectedInvested=[...rows,...stableRows].reduce((sum,row)=>sum+row.cost,0);
+ const pnlPct=selectedInvested>0?selTotals.unrealized/selectedInvested*100:0;
+ $('portPnl').textContent=portfolioPnlMode==='pct'?`${pnlPct>=0?'+':''}${pnlPct.toFixed(2)}%`:(selTotals.unrealized>=0?'+':'')+money(selTotals.unrealized);
  $('portPnl').className=selTotals.unrealized>=0?'positive':'negative';
+ $('pnlModeUsd').classList.toggle('active',portfolioPnlMode==='usd');$('pnlModePct').classList.toggle('active',portfolioPnlMode==='pct');
+ $('pnlModeUsd').setAttribute('aria-pressed',String(portfolioPnlMode==='usd'));$('pnlModePct').setAttribute('aria-pressed',String(portfolioPnlMode==='pct'));
  $('portRealized').textContent=(selTotals.realizedTotal>=0?'+':'')+money(selTotals.realizedTotal);
  $('portCount').textContent=displayRows.length;document.querySelectorAll('[data-edit-spot]').forEach(b=>b.onclick=()=>editSpotPosition(b.dataset.editSpot));
  $('portfolioHint').textContent='Поточний портфель: '+(p?.name||'—')+'. Spot-активи та опціони обліковуються окремо; загальна аналітика враховує P/L обох модулів.';
@@ -1185,6 +1195,9 @@ const _collapseInit=document.querySelectorAll('[data-collapse-target]');_collaps
 window.addEventListener('resize',()=>{if($('analyticsContent')&&!$('analyticsContent').hidden)requestAnimationFrame(drawAnalytics);});
 
 
+$('pnlModeUsd').addEventListener('click',()=>{portfolioPnlMode='usd';localStorage.setItem('ct_portfolio_pnl_mode',portfolioPnlMode);renderPortfolio();});
+$('pnlModePct').addEventListener('click',()=>{portfolioPnlMode='pct';localStorage.setItem('ct_portfolio_pnl_mode',portfolioPnlMode);renderPortfolio();});
+
 // Initialize strategy UI and load Bybit as the preferred public market-data source.
 $('scenarioDate').value=new Date().toISOString().slice(0,10);renderLegs();renderSavedStrategies();$('scenarioPrice').value=num($('builderSpot').value,90000);$('scenarioPriceManual').value=num($('builderSpot').value,90000);$('scenarioPrice').max=String(Math.max(200000,num($('builderSpot').value)*2));$('scenarioPrice').min='0';loadInstrumentList();
 window.addEventListener('resize',()=>{drawPayoff();drawAnalytics();});
@@ -1201,9 +1214,9 @@ if(cloudUser.isAdmin){
  }
  function renderAdminEditor(){
   const email=$('cloudAdminUser').value,record=adminRecords.find(u=>u.email===email);$('cloudAdminEmail').value=record?.email||'';$('cloudAdminBlocked').checked=record?.blocked===true;$('cloudAdminRole').checked=record?.role==='admin';
-  const g=record?.permissions?.global||{}; $('cloudAdminGlobal').innerHTML='<h3>Глобальні модулі</h3>'+globalKeys.map(k=>`<label class="check"><input type="checkbox" data-cloud-global="${k}" ${g[k]===true?'checked':''}> ${k}</label>`).join('');
+  const g=record?.permissions?.global||{}; $('cloudAdminGlobal').innerHTML='<h3>Глобальні модулі</h3>'+globalKeys.map(k=>`<label class="check"><input type="checkbox" data-cloud-global="${k}" ${g[k]===true?'checked':''}> ${{analytics:'Аналітика',options:'Опціони',optionStrategies:'Стратегії опціонів',watchlistView:'Перегляд Watchlist',watchlistEdit:'Редагування Watchlist',importData:'Імпорт даних',exportData:'Експорт даних',settings:'Налаштування'}[k]||k}</label>`).join('');
   const pp=record?.permissions?.portfolios||{};
-  $('cloudAdminPortfolioRights').innerHTML=portfolios.map(p=>`<div class="card" style="padding:10px"><b>${esc(p.name)}</b><div class="row" style="flex-wrap:wrap">${['view','history','trade','edit','funds'].map(k=>`<label class="check"><input type="checkbox" data-cloud-portfolio="${esc(p.id)}" data-cloud-permission="${k}" ${pp[p.id]?.[k]===true?'checked':''}> ${k}</label>`).join('')}</div></div>`).join('')||'<p>Портфелів поки немає.</p>';
+  $('cloudAdminPortfolioRights').innerHTML=portfolios.map(p=>`<div class="card" style="padding:10px"><b>${esc(p.name)}</b><div class="row" style="flex-wrap:wrap">${['view','history','trade','edit','funds'].map(k=>`<label class="check"><input type="checkbox" data-cloud-portfolio="${esc(p.id)}" data-cloud-permission="${k}" ${pp[p.id]?.[k]===true?'checked':''}> ${{view:'Перегляд',history:'Історія',trade:'Торгівля',edit:'Редагування',funds:'Кошти'}[k]}</label>`).join('')}</div></div>`).join('')||'<p>Портфелів поки немає.</p>';
  }
  $('cloudAdminUser').onchange=renderAdminEditor;$('cloudAdminRefresh').onclick=()=>loadAdminUsers($('cloudAdminUser').value).catch(e=>$('cloudAdminStatus').textContent=e.message);
  $('cloudAdminSave').onclick=async()=>{
