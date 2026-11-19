@@ -733,10 +733,10 @@ async function saveMarketDataSnapshot(assets){
 async function refresh(){
  const btn=$('refreshBtn');if(btn.disabled)return;btn.disabled=true;btn.textContent='Оновлюю…';
  try{
- let spotError='',spotOk=false,spotUpdated=0,spotMissing=0,optionResult={ok:0,fail:0};
+ let spotError='',spotOk=false,spotUpdated=0,spotMissing=0,optionResult={ok:0,fail:0},requested=[];
  try{
   try{if(!tickerPairs.length||!bybitTickerPairs.length||!bingxTickerPairs.length)await loadTickerDirectory();}catch(e){console.warn('Ticker directory load failed',e);}
-  const requested=[...new Set([...symbols,...allPositions().map(x=>x.asset),...watch.map(x=>x.asset)])].map(x=>String(x).toUpperCase()).filter(x=>x&&!['USDT','USDC'].includes(x));
+  requested=[...new Set([...symbols,...allPositions().map(x=>x.asset),...watch.map(x=>x.asset)])].map(x=>String(x).toUpperCase()).filter(x=>x&&!['USDT','USDC'].includes(x));
   requested.forEach(asset=>{delete prices[asset];});
   const binanceBases=new Set(tickerPairs.filter(x=>x.quote==='USDT').map(x=>x.base));
   const binanceRequested=requested.filter(base=>!tickerPairs.length||binanceBases.has(base));
