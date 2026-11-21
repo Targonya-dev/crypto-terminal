@@ -102,8 +102,10 @@
     let collections = { collections: {}, revision: 0, deniedKeys: [] };
     try { collections = await request('/workspaces/main/collections'); }
     catch (error) { if (error.status !== 403) throw error; }
+    let optionsCash = null;
+    if (user.isAdmin || permissions.global?.options === true) optionsCash = await request('/options/main/cash');
     return {
-      user, permissions, portfolios, collections: collections.collections || {},
+      user, permissions, portfolios, optionsCash, collections: collections.collections || {},
       collectionsRevision: Number(collections.revision || 0), deniedKeys: collections.deniedKeys || []
     };
   }
@@ -190,6 +192,22 @@
     return portfolio;
   }
 
+  async function getOptionsCash() { return request('/options/main/cash'); }
+  async function operateOptionsCash(operation, expectedRevision) {
+    const idempotencyKey = `ct_optcash_${randomKey()}`;
+    return request('/options/main/cash', { method: 'POST', body: { expectedRevision: Number(expectedRevision || 0), operation: { ...operation, idempotencyKey } } });
+  }
+  async function operateOptionsPortfolio(operation, expectedCashRevision, positions, closed) {
+    const operations = (Array.isArray(operation) ? operation : [operation]).map(op => ({
+      ...op, idempotencyKey: op.idempotencyKey || `ct_optportfolio_${randomKey()}`
+    }));
+    return request('/options/main/portfolio-operation', { method: 'POST', body: {
+      expectedCashRevision: Number(expectedCashRevision || 0),
+      operations,
+      collections: { ct_options_portfolio_v1: positions, ct_options_portfolio_v1_closed: closed }
+    } });
+  }
+
   async function saveCollections(collections, revision) {
     const allowed = {};
     for (const key of COLLECTION_KEYS) if (Object.prototype.hasOwnProperty.call(collections, key)) allowed[key] = collections[key];
@@ -219,7 +237,7 @@
   async function archivePortfolio(id) { return request(`/admin/portfolios/${encodeURIComponent(id)}`, { method: 'DELETE' }); }
 
   root.CryptoTerminalCloud = Object.freeze({
-    CloudError, request, bootstrap, operate, reloadPortfolio, saveCollections,
+    CloudError, request, bootstrap, operate, reloadPortfolio, saveCollections, getOptionsCash, operateOptionsCash, operateOptionsPortfolio,
     adminUsers, saveUser, setAdminRole, adminAudit, importMigration, createPortfolio, renamePortfolio, archivePortfolio,
     permissions: PERMISSIONS
   });
