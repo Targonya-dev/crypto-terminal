@@ -168,6 +168,7 @@ canvas,svg{max-width:100%}
 
 
 .pnl-mode-switch{display:inline-flex;gap:2px;margin-left:7px;padding:2px;border:1px solid var(--line);border-radius:7px;vertical-align:middle}.pnl-mode-switch button{padding:2px 7px;border:0;border-radius:5px;background:transparent;color:var(--muted);font:11px ui-monospace,monospace;cursor:pointer}.pnl-mode-switch button.active{background:var(--green);color:#07120e}.portfolio-pnl-metric>span{display:flex;align-items:center;flex-wrap:wrap;gap:2px}
+[hidden]{display:none!important}
 </style>
 </head>
 <body>
@@ -459,12 +460,18 @@ canvas,svg{max-width:100%}
 const $=id=>document.getElementById(id);
 const cloudUser=cloudData.user||{};
 if(guestMode){
- document.querySelectorAll('.grid > section.card:not(:first-child)').forEach(section=>section.hidden=true);
+ const marketCard=document.querySelector('.grid > section.card');
+ document.querySelectorAll('.grid > section.card').forEach(section=>{if(section!==marketCard)section.hidden=true;});
+ // Backup/restore contains private account data and must never appear in public mode.
+ $('backupRestore').hidden=true;
  $('guestLogin').hidden=false;$('guestModeLabel').hidden=false;$('guestLoginArea').hidden=false;
- const login=()=>{   const target=location.origin+'/';   location.href='https://crypto-terminal.cloudflareaccess.com/cdn-cgi/access/login/crypto-terminal-1zu.pages.dev/api/*?redirect_url='+encodeURIComponent(target); };
+ const login=()=>{const target=location.origin+'/';location.href='https://crypto-terminal.cloudflareaccess.com/cdn-cgi/access/login/crypto-terminal-1zu.pages.dev?redirect_url='+encodeURIComponent(target);};
  $('guestLogin').onclick=login;$('guestLoginMarket').onclick=login;
  $('lastUpdate').textContent='Публічний перегляд · приватні дані приховані';
 }else{
+ // The market sign-in prompt is only for guests; authenticated users get identity + logout controls.
+ $('guestLoginArea').hidden=true;$('guestLogin').hidden=true;$('guestModeLabel').hidden=true;
+ $('backupRestore').hidden=false;
  $('userEmailBadge').textContent=cloudUser.email||'Авторизовано';$('userEmailBadge').hidden=false;$('logoutBtn').hidden=false;
  $('logoutBtn').onclick=()=>{const target=location.origin+'/';location.href='https://crypto-terminal.cloudflareaccess.com/cdn-cgi/access/logout?returnTo='+encodeURIComponent(target);};
 }
