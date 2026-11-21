@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Crypto Terminal — v1.12.3</title>
+<title>Crypto Terminal — v1.12.4</title>
 <style>
 :root{color-scheme:dark;--bg:#0b1118;--panel:#121c26;--panel2:#172431;--line:#263746;--text:#e7eef5;--muted:#91a2b2;--green:#42d6a4;--red:#ff737d;--amber:#f4bd61;--blue:#7cb8ff;--radius:13px}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 10% 0%,#132537 0,transparent 40%),var(--bg);color:var(--text);font:14px/1.5 Inter,system-ui,-apple-system,Segoe UI,sans-serif}
@@ -166,13 +166,16 @@ canvas,svg{max-width:100%}
  .card:has(#analyticsPortfolioRows) table,.card:has(#analyticsAssetRows) table{min-width:460px}
 }
 
+
+.pnl-mode-switch{display:inline-flex;gap:2px;margin-left:7px;padding:2px;border:1px solid var(--line);border-radius:7px;vertical-align:middle}.pnl-mode-switch button{padding:2px 7px;border:0;border-radius:5px;background:transparent;color:var(--muted);font:11px ui-monospace,monospace;cursor:pointer}.pnl-mode-switch button.active{background:var(--green);color:#07120e}.portfolio-pnl-metric>span{display:flex;align-items:center;flex-wrap:wrap;gap:2px}
+[hidden]{display:none!important}
 </style>
 </head>
 <body>
 <div class="wrap">
 <header class="top">
- <div class="brand"><div class="logo">CT</div><div><div class="eyebrow">Особистий ринковий простір</div><h1>Crypto Terminal <span class="pill">v1.12</span></h1><div class="sub">Спотовий облік · Гаманці · Список спостереження · Опціони</div></div></div>
- <div class="actions"><span class="status" id="lastUpdate">Дані ще не оновлювались</span><button class="primary" id="refreshBtn">↻ Оновити дані</button></div>
+ <div class="brand"><div class="logo">CT</div><div><div class="eyebrow">Особистий ринковий простір</div><h1>Crypto Terminal <span class="pill">v1.12.4</span></h1><div class="sub">Спотовий облік · Гаманці · Список спостереження · Опціони</div></div></div>
+ <div class="actions"><span class="status" id="lastUpdate">Дані ще не оновлювались</span><button class="primary" id="refreshBtn">↻ Оновити дані</button><span id="userEmailBadge" class="tag" hidden></span><button id="logoutBtn" class="smallbtn" hidden>Вийти</button><button id="guestLogin" class="smallbtn" hidden>Увійти</button><span id="guestModeLabel" class="tag" hidden>Публічний режим</span></div>
 </header>
 <div class="grid">
  <section class="card span-12">
@@ -184,10 +187,10 @@ canvas,svg{max-width:100%}
    <div class="kpi"><label>BNB / USDT</label><strong id="bnbPrice">—</strong><div class="change muted" id="bnbChange">—</div></div>
    <div class="kpi"><label>HYPE / USDT</label><strong id="hypePrice">—</strong><div class="change muted" id="hypeChange">—</div></div>
   </div>
-  <div class="notice">Ціни беруться з Binance Spot; якщо пара відсутня — перевіряються Bybit Spot, потім BingX Spot. Джерело відображається у Watchlist та статусі оновлення. Оновлення лише вручну; це ринкові котирування, а не ціна виконання угоди.</div>
+  <div class="notice">Ціни беруться з Binance Spot; якщо пара відсутня — перевіряються Bybit Spot, потім BingX Spot. Джерело відображається у Watchlist та статусі оновлення. Це ринкові котирування, а не ціна виконання угоди.</div><div id="guestLoginArea" class="row" style="margin-top:10px" hidden><span class="muted">Перегляд ринку доступний без входу. Увійди, щоб відкрити приватні портфелі та інструменти.</span><button id="guestLoginMarket" class="primary">Увійти через Google</button></div>
  </section>
 
-<section class="card span-7">
+<section class="card span-7" id="watchDesk">
   <div class="cardhead"><h2>СПИСОК СПОСТЕРЕЖЕННЯ ТА ЦІЛІ</h2><span class="tag">ЛОКАЛЬНО</span></div>
   <div class="row" style="margin-bottom:10px">
    <div class="field"><label>Список</label><select id="watchGroupFilter"><option value="all">Усі списки</option></select></div>
@@ -209,7 +212,7 @@ canvas,svg{max-width:100%}
    <div class="kpi"><label>Загальна вартість</label><strong id="allValue">$0</strong></div>
    <div class="kpi"><label>Сумарний P/L</label><strong id="allPnl">$0</strong><div class="change muted" id="allPnl24h">24H: —</div></div>
    <div class="kpi"><label>Реалізований P/L</label><strong id="allRealized">$0</strong></div>
-   <div class="kpi"><label>Кількість портфелів</label><strong id="allCount">1</strong></div>
+   <div class="kpi"><label>Собівартість активів</label><strong id="allCostBasis">$0</strong></div>
    <div class="kpi"><label>Best Performer · актив</label><strong id="bestPerformer">—</strong><div class="change muted" id="bestPerformerMeta">—</div></div>
    <div class="kpi"><label>Worst Performer · актив</label><strong id="worstPerformer">—</strong><div class="change muted" id="worstPerformerMeta">—</div></div>
   </div>
@@ -220,7 +223,7 @@ canvas,svg{max-width:100%}
  <div class="cardhead"><h2><button type="button" class="collapse-toggle" data-collapse-target="analyticsContent" data-collapse-key="analytics" aria-expanded="true" aria-controls="analyticsContent"><span>АНАЛІТИКА ПОРТФЕЛІВ ТА АКТИВІВ</span><span class="collapse-chevron" aria-hidden="true">⌄</span></button></h2><span class="tag">НАТИСНИ, ЩОБ ЗГОРНУТИ</span></div>
  <div class="collapse-content" id="analyticsContent">
  <div class="row" style="margin-bottom:12px;align-items:end">
-  <div class="field" style="max-width:160px"><label>Період графіка P&L</label><select id="analyticsPeriod"><option value="86400000">24H</option><option value="604800000" selected>7D</option><option value="2592000000">1M</option><option value="7776000000">3M</option><option value="15552000000">6M</option><option value="31536000000">1Y</option><option value="all">Увесь час</option></select></div>
+  <div class="field" style="max-width:160px"><label>Період графіка P&L</label><select id="analyticsPeriod"><option value="86400000">24H</option><option value="604800000" selected>7D</option><option value="2592000000">30D</option><option value="31536000000">1Y</option><option value="all">Увесь час</option></select></div>
   <div class="field" style="max-width:260px"><label>Портфелі для аналітики</label><div class="dropdown"><button type="button" class="smallbtn" id="analyticsPortfolioFilterBtn">Портфелі: усі ▾</button><div class="dropdown-panel" id="analyticsPortfolioFilterMenu" hidden></div></div></div>
   <div class="field" style="max-width:260px"><label>Окремі активи</label><div class="dropdown"><button type="button" class="smallbtn" id="analyticsAssetFilterBtn">Активи: усі ▾</button><div class="dropdown-panel" id="analyticsAssetFilterMenu" hidden></div></div></div>
   <span class="status" id="analyticsHistoryStatus">Історія почне накопичуватися після запуску цієї версії.</span>
@@ -252,9 +255,9 @@ canvas,svg{max-width:100%}
   <!-- 2. Portfolio summary: four equal-width cards -->
   <div class="optiongrid" style="margin:0 0 12px">
    <div class="metric"><span>Вартість портфеля</span><b id="portValue">$0</b></div>
-   <div class="metric"><span>Нереалізований P/L</span><b id="portPnl">$0</b></div>
+   <div class="metric portfolio-pnl-metric"><span>Нереалізований P/L <span class="pnl-mode-switch" role="group" aria-label="Формат P&L"><button type="button" id="pnlModeUsd" class="active" aria-pressed="true">$</button><button type="button" id="pnlModePct" aria-pressed="false">%</button></span></span><b id="portPnl">$0</b></div>
    <div class="metric"><span>Реалізований P/L</span><b id="portRealized">$0</b></div>
-   <div class="metric"><span>Позицій</span><b id="portCount">0</b></div>
+   <div class="metric"><span>Собівартість активів</span><b id="portCostBasis">$0</b></div>
   </div>
   <div class="notice" id="portfolioHint" style="margin:0 0 12px">Кожен портфель має незалежні позиції. Зведена статистика всіх портфелів відображається в окремому блоці. Дані зберігаються локально в цьому браузері.</div>
   <!-- 3. Assets in selected portfolio -->
@@ -274,7 +277,7 @@ canvas,svg{max-width:100%}
 
 
 
-<section class="card span-12" id="transactionJournal">
+<section class="card span-12" id="journalSection">
   <div class="cardhead"><h2><button type="button" class="collapse-toggle" data-collapse-target="journalContent" data-collapse-key="journal" aria-expanded="true" aria-controls="journalContent"><span>ЖУРНАЛ ТРАНЗАКЦІЙ</span><span class="collapse-chevron" aria-hidden="true">⌄</span></button></h2><span class="tag">СПОТ + ГАМАНЕЦЬ</span></div>
   <div class="collapse-content" id="journalContent">
   <div class="row date-filter" style="margin-bottom:10px;align-items:end"><div class="field" style="max-width:180px"><label>Від дати</label><input type="date" id="journalDateFrom"></div><div class="field" style="max-width:180px"><label>До дати</label><input type="date" id="journalDateTo"></div><button type="button" class="smallbtn" id="journalDateClear">Скинути дати</button><span class="status" id="journalDateCount"></span></div>
@@ -283,17 +286,19 @@ canvas,svg{max-width:100%}
  </section>
 
 <section class="card span-12" id="stablecoinWallet">
-  <div class="cardhead"><h2><button type="button" class="collapse-toggle" data-collapse-target="walletContent" data-collapse-key="wallet" aria-expanded="true" aria-controls="walletContent"><span>ГАМАНЦІ · USDT / USDC</span><span class="collapse-chevron" aria-hidden="true">⌄</span></button></h2><span class="tag">КЕРУВАННЯ СТЕЙБЛКОЇНАМИ</span></div>
+  <div class="cardhead"><h2><button type="button" class="collapse-toggle" data-collapse-target="walletContent" data-collapse-key="wallet" aria-expanded="true" aria-controls="walletContent"><span>ГАМАНЕЦЬ · СТЕЙБЛКОЇНИ</span><span class="collapse-chevron" aria-hidden="true">⌄</span></button></h2><span class="tag">КЕРУВАННЯ КОШТАМИ ПОРТФЕЛІВ</span></div>
   <div class="collapse-content" id="walletContent">
   <div class="formgrid">
+   <div class="field"><label for="walletPortfolioSelect">Портфель</label><select id="walletPortfolioSelect"></select></div>
    <div class="field"><label>Тип руху</label><select id="walletAction"><option value="deposit">Поповнення</option><option value="withdraw">Виведення</option><option value="exchange">Обмін USDT ↔ USDC</option></select></div>
-   <div class="field"><label>Звідки / валюта</label><select id="walletFrom"><option>USDT</option><option>USDC</option></select></div>
+   <div class="field"><label>Валюта</label><select id="walletFrom"><option>USDT</option><option>USDC</option></select></div>
    <div class="field"><label>Сума</label><input id="walletAmount" type="number" min="0" step="any" placeholder="100"></div>
    <div class="field" id="walletToWrap" style="display:none"><label>Отримати валюту</label><select id="walletTo"><option>USDC</option><option>USDT</option></select></div>
    <div class="field" id="walletRateWrap" style="display:none"><label>Курс (скільки отримуємо за 1)</label><input id="walletRate" type="number" min="0" step="any" value="1"></div>
-   <div class="field"><label>Комісія (у валюті списання)</label><input id="walletFee" type="number" min="0" step="any" value="0"></div>
+   <div class="field" id="walletFeeWrap"><label>Комісія (у валюті списання)</label><input id="walletFee" type="number" min="0" step="any" value="0"></div>
   </div>
-  <div class="row" style="margin-top:10px"><button class="primary" id="applyWallet">Провести рух коштів</button><span class="status" id="walletStatus">Операції прив'язуються до вибраного портфеля</span></div>
+  <div class="row" style="margin-top:10px;align-items:center;flex-wrap:wrap"><button class="primary" id="applyWallet">Провести рух коштів</button><span class="status" id="walletStatus">Обери портфель для керування стейблкоїнами</span></div>
+  <div class="notice" id="walletBalanceSummary">Баланс вибраного портфеля буде показано тут.</div>
   <div class="notice">Зовнішні поповнення та виведення не є прибутком або збитком. Обмін стейблкоїнів змінює баланси двох гаманців і записується окремо.</div>
   </div>
  </section>
@@ -316,7 +321,7 @@ canvas,svg{max-width:100%}
    <span class="status" id="optionStatus">Обери біржу й завантаж ланцюжок</span>
   </div>
   <div class="optiongrid" id="optionMetrics">
-   <div class="metric"><span>Mark Price</span><b>—</b></div><div class="metric"><span>Mark IV</span><b>—</b></div><div class="metric"><span>Delta</span><b>—</b></div><div class="metric"><span>Bid / Ask</span><b>—</b></div><div class="metric"><span>Open Interest</span><b>—</b></div><div class="metric"><span>Gamma / Theta / Vega</span><b>—</b></div>
+   <div class="metric"><span>Марк-ціна</span><b>—</b></div><div class="metric"><span>IV за Mark</span><b>—</b></div><div class="metric"><span>Delta</span><b>—</b></div><div class="metric"><span>Bid / Ask</span><b>—</b></div><div class="metric"><span>Відкритий інтерес</span><b>—</b></div><div class="metric"><span>Gamma / Theta / Vega</span><b>—</b></div>
   </div>
   <div class="notice">Використовуються лише публічні ринкові дані, без API-ключів і без надсилання ордерів. Bybit: V5 Options API. Deribit: Public API. Якщо біржа недоступна з браузера або API обмежує запити, можна продовжити в ручному режимі.</div>
  </section>
@@ -353,7 +358,7 @@ canvas,svg{max-width:100%}
  <div class="optiongrid" id="strategyMetrics">
   <div class="metric"><span>Початкова премія (Net Debit/Credit)</span><b>—</b></div><div class="metric"><span>P/L за сценарієм</span><b>—</b></div><div class="metric"><span>Break-even</span><b>—</b></div><div class="metric"><span>Макс. прибуток</span><b>—</b></div><div class="metric"><span>Макс. збиток</span><b>—</b></div><div class="metric"><span>Net Delta / Gamma</span><b>—</b></div>
  </div>
- <div style="margin-top:14px"><div class="cardhead"><h2>SCENARIO TABLE</h2><span class="tag">MODEL ESTIMATES</span></div><div style="overflow:auto"><table><thead><tr><th>Spot scenario</th><th class="num">Spot</th><th class="num">P/L</th><th class="num">Delta</th><th class="num">Gamma</th></tr></thead><tbody id="scenarioRows"><tr><td colspan="5" class="empty">Додай Legs для сценарного аналізу</td></tr></tbody></table></div></div>
+ <div style="margin-top:14px"><div class="cardhead"><h2>ТАБЛИЦЯ СЦЕНАРІЇВ</h2><span class="tag">МОДЕЛЬНІ ОЦІНКИ</span></div><div style="overflow:auto"><table><thead><tr><th>Сценарій ціни</th><th class="num">Spot</th><th class="num">P/L</th><th class="num">Delta</th><th class="num">Gamma</th></tr></thead><tbody id="scenarioRows"><tr><td colspan="5" class="empty">Додай ноги стратегії для сценарного аналізу</td></tr></tbody></table></div></div>
  <div class="notice" id="calcNotice">Теоретична оцінка використовує спрощену spot-based модель Black–Scholes із безперервним нарахуванням безризикової ставки. Це модельна оцінка, не прогноз біржової ціни. Різні експірації розраховуються окремо для кожного Leg. Комісії, спред і прослизання не включені.</div>
 </section>
 
@@ -372,15 +377,15 @@ canvas,svg{max-width:100%}
  <div class="kpis" style="grid-template-columns:repeat(3,minmax(0,1fr));margin-bottom:12px">
   <div class="kpi"><label>Відкриті позиції</label><strong id="opCount">0</strong></div>
   <div class="kpi"><label>Поточна вартість / mark</label><strong id="opValue">$0.00</strong></div>
-  <div class="kpi"><label>Нереалізований P/L</label><strong id="opUnrealized">$0.00</strong></div>
-  <div class="kpi"><label>Реалізований P/L</label><strong id="opRealized">$0.00</strong></div>
+  <div class="kpi"><label><span id="opPnlLabel">Нереалізований P/L</span> <span class="pnl-mode-switch" role="group" aria-label="Тип P&amp;L"><button type="button" id="opPnlUnrealized" class="active" aria-pressed="true">Нереалізований</button><button type="button" id="opPnlRealized" aria-pressed="false">Реалізований</button></span></label><strong id="opSelectedPnl">$0.00</strong></div>
   <div class="kpi"><label>Загальний P/L</label><strong id="opTotal">$0.00</strong></div>
   <div class="kpi"><label>ROI відкритих позицій</label><strong id="opRoi">—</strong></div>
+  <div class="kpi"><label>Баланс коштів</label><strong id="opCashBalance">—</strong></div>
  </div>
- <div class="row" style="margin-bottom:10px"><div class="field" style="max-width:260px"><label>Фільтр</label><select id="opFilter"><option value="all">Усі позиції</option></select></div><span class="status" id="opUpdated">Mark Price ще не оновлювалась</span></div>
- <div style="overflow:auto"><table style="min-width:1120px"><thead><tr><th>Контракт</th><th>Біржа</th><th>Напрямок</th><th class="num">К-сть</th><th class="num">Strike</th><th><button type="button" class="portfolio-sort" id="opSortExpiry">Expiration ↕</button></th><th class="num">Вхід</th><th class="num">Mark</th><th class="num"><button type="button" class="portfolio-sort" id="opSortValue">Вартість позиції ↕</button></th><th class="num"><button type="button" class="portfolio-sort" id="opSortPnl">P/L ↕</button></th><th class="num"><button type="button" class="portfolio-sort" id="opSortRoi">ROI ↕</button></th><th></th></tr></thead><tbody id="opRows"><tr><td colspan="12" class="empty">Опціонних позицій поки немає</td></tr></tbody></table></div>
+ <div class="row" style="margin-bottom:10px"><div class="field" style="max-width:260px"><label>Фільтр</label><select id="opFilter"><option value="all">Усі позиції</option></select></div><span class="status" id="opUpdated">Марк-ціна ще не оновлювалася</span></div>
+ <div style="overflow:auto"><table style="min-width:1120px"><thead><tr><th>Контракт</th><th>Біржа</th><th>Напрямок</th><th class="num">К-сть</th><th class="num">Strike</th><th><button type="button" class="portfolio-sort" id="opSortExpiry">Експірація ↕</button></th><th class="num">Вхід</th><th class="num">Mark</th><th class="num"><button type="button" class="portfolio-sort" id="opSortValue">Вартість позиції ↕</button></th><th class="num"><button type="button" class="portfolio-sort" id="opSortPnl">P/L ↕</button></th><th class="num"><button type="button" class="portfolio-sort" id="opSortRoi">ROI ↕</button></th><th></th></tr></thead><tbody id="opRows"><tr><td colspan="12" class="empty">Опціонних позицій поки немає</td></tr></tbody></table></div>
  <div style="margin-top:16px"><div class="cardhead"><h2>ІСТОРІЯ ЗАКРИТИХ ОПЦІОНІВ</h2><span class="tag">REALIZED P/L</span></div><div class="row date-filter" style="margin-bottom:10px;align-items:end"><div class="field" style="max-width:180px"><label>Від дати</label><input type="date" id="closedDateFrom"></div><div class="field" style="max-width:180px"><label>До дати</label><input type="date" id="closedDateTo"></div><button type="button" class="smallbtn" id="closedDateClear">Скинути дати</button><span class="status" id="closedDateCount"></span></div><div class="closed-options-scroll" style="overflow:auto;max-height:220px"><table style="min-width:850px"><thead><tr><th>Дата</th><th>Контракт</th><th>Біржа</th><th class="num">К-сть</th><th class="num">Вхід</th><th class="num">Вихід</th><th class="num">Комісія</th><th class="num">Реалізований P/L</th></tr></thead><tbody id="opClosedRows"><tr><td colspan="8" class="empty">Закритих позицій поки немає</td></tr></tbody></table></div></div>
- <div class="notice">Позиції зберігаються окремо від Spot. P/L переводиться в USD за поточним Spot базового активу для премій, номінованих у базовій валюті. Якщо Mark Price недоступна, зберігається останнє коректне значення.</div>
+ <div class="notice">Позиції зберігаються окремо від Spot. P/L переводиться в USD за поточним Spot базового активу для премій, номінованих у базовій валюті. Якщо марк-ціна недоступна, зберігається останнє коректне значення.</div>
  </div>
 </section>
 
@@ -389,17 +394,114 @@ canvas,svg{max-width:100%}
  <div class="collapse-content" id="backupContent">
  <div class="row" style="align-items:center">
   <button id="exportBackup" class="primary">↓ Експортувати всю пам’ять</button>
-  <button id="importBackup">↑ Імпортувати резервну копію</button>
+  <button id="importBackup" disabled title="Імпорт виконується через контрольовану хмарну міграцію">↑ Імпорт доступний через Admin Panel</button>
   <input id="backupFile" type="file" accept=".json,application/json" hidden>
   <span class="status" id="backupStatus">Резервна копія охоплює портфелі, угоди, опціони, watchlist, групи та збережені стратегії.</span>
  </div>
  <div class="notice">Експорт створює один JSON-файл для перенесення між браузерами й пристроями. Імпорт замінює поточні збережені дані даними з файлу. Перед заміною створюється локальна аварійна копія та завантажується файл поточного стану. Ринкові котирування не включаються — їх можна отримати повторно з API.</div>
  </div>
 </section>
-<div class="footer"><span>Crypto Terminal · v1.12 · spot + options ledger</span><span>API-ключі не потрібні · лише публічні ринкові дані</span></div>
+<section class="card span-12" id="cloudAdminPanel" hidden>
+ <div class="cardhead"><h2><button type="button" class="collapse-toggle" data-collapse-target="cloudAdminContent" data-collapse-key="cloud_admin" aria-expanded="true" aria-controls="cloudAdminContent"><span>АДМІН-ПАНЕЛЬ · КОРИСТУВАЧІ ТА ДОСТУП</span><span class="collapse-chevron" aria-hidden="true">⌄</span></button></h2><span class="tag">НАТИСНИ, ЩОБ ЗГОРНУТИ</span></div>
+ <div class="collapse-content" id="cloudAdminContent">
+ <div class="row" style="align-items:end;gap:10px;flex-wrap:wrap">
+  <div class="field" style="min-width:260px;flex:1"><label for="cloudAdminUser">Користувач</label><select id="cloudAdminUser"><option value="">Новий користувач</option></select></div>
+  <div class="field" style="min-width:260px;flex:1"><label for="cloudAdminEmail">Email</label><input id="cloudAdminEmail" type="email" placeholder="user@example.com"></div>
+  <label class="check"><input id="cloudAdminBlocked" type="checkbox"> Заблокувати</label>
+  <label class="check"><input id="cloudAdminRole" type="checkbox"> Адміністратор</label>
+  <button id="cloudAdminRefresh" type="button">Оновити</button>
+ </div>
+ <div id="cloudAdminGlobal" class="grid" style="margin-top:12px"></div>
+ <h3>Права на окремі портфелі</h3><div id="cloudAdminPortfolioRights" class="grid"></div>
+ <div class="row" style="margin-top:12px"><button id="cloudAdminSave" class="primary" type="button">Зберегти доступ</button><button id="cloudAdminAudit" type="button">Показати журнал адміністрування</button></div>
+ <h3>Одноразове перенесення даних</h3><div class="row"><input id="cloudMigrationFile" type="file" accept=".json,application/json"><button id="cloudMigrationImport" type="button">Імпортувати дані в Cloud</button></div><div class="notice">Обери migration-payload-v1.0.json з пакета. Імпорт не перезаписує активні портфелі; перед запуском зроби резервну копію приватного GitHub-репозиторію.</div>
+ <pre id="cloudAdminAuditOutput" style="white-space:pre-wrap;max-height:240px;overflow:auto"></pre>
+ <div class="notice" id="cloudAdminStatus">Права кожного портфеля задаються окремо. Нові портфелі не відкриваються автоматично.</div>
 </div>
+</section>
+<div class="footer"><span>Crypto Terminal · v1.12.4 · спотовий та опціонний облік</span><span>API-ключі не потрібні · лише публічні ринкові дані</span></div>
+</div>
+<script src="/cloud/cloud-client.js"></script>
 <script>
+(async function cloudBoot(){
+ const cloud=window.CryptoTerminalCloud;
+ if(!cloud){document.body.innerHTML='<main style="max-width:760px;margin:8vh auto;padding:24px;font:16px system-ui"><h1>Crypto Terminal Cloud</h1><p>Не вдалося завантажити Cloud Client. Перевір розгортання /cloud/cloud-client.js.</p></main>';return;}
+ let cloudData,guestMode=false;
+ try { cloudData=await cloud.bootstrap(); }
+ catch(error){
+   // Guest mode is a public market-only view. Never hydrate private collections
+   // or portfolio state from browser storage when Access is unavailable.
+   guestMode=true;
+   cloudData={user:{email:'',isAdmin:false,provisioned:false,blocked:false,permissions:{global:{},portfolios:{}}},permissions:{global:{},portfolios:{}},portfolios:[],optionsCash:null,collections:{},collectionsRevision:0};
+ }
+ window.__CT_CLOUD__={api:cloud,data:cloudData,collectionsRevision:cloudData.collectionsRevision||0,permissions:cloudData.permissions||{},user:cloudData.user||{}};
+ window.__CT_CLOUD_PORTFOLIOS__=cloudData.portfolios||[];
+ // Clear managed collection caches before applying this identity's permission-filtered cloud view.
+ // Otherwise a previous user in the same browser could leave denied collections visible locally.
+ const cloudCollectionKeys=['ct_watch','ct_watch_groups','ct_options_portfolio_v1','ct_options_portfolio_v1_closed','ct_options_portfolio_v1_updated','ct_option_strategies_v1','ct_analytics_history'];
+ for(const key of cloudCollectionKeys)localStorage.removeItem(key);
+ for(const [key,value] of Object.entries(cloudData.collections||{})) if(cloudCollectionKeys.includes(key))localStorage.setItem(key,JSON.stringify(value));
+ if(!Array.isArray(cloudData.collections?.ct_watch)) localStorage.setItem('ct_watch','[]');
+ if(!Array.isArray(cloudData.collections?.ct_watch_groups)) localStorage.setItem('ct_watch_groups','["Основний"]');
+ if(!Array.isArray(cloudData.collections?.ct_options_portfolio_v1)) localStorage.setItem('ct_options_portfolio_v1','[]');
+ if(!Array.isArray(cloudData.collections?.ct_options_portfolio_v1_closed)) localStorage.setItem('ct_options_portfolio_v1_closed','[]');
+ if(!Array.isArray(cloudData.collections?.ct_option_strategies_v1)) localStorage.setItem('ct_option_strategies_v1','[]');
+ if(!Array.isArray(cloudData.collections?.ct_analytics_history)) localStorage.setItem('ct_analytics_history','[]');
+ let collectionSaveQueue=Promise.resolve();
+ window.__ctCloudSaveCollections=function(){
+   collectionSaveQueue=collectionSaveQueue.then(async()=>{
+   const keys=['ct_watch','ct_watch_groups','ct_options_portfolio_v1','ct_options_portfolio_v1_closed','ct_options_portfolio_v1_updated','ct_option_strategies_v1','ct_analytics_history'];
+   const collections={}; for(const key of keys){const raw=localStorage.getItem(key);if(raw!==null){try{collections[key]=JSON.parse(raw)}catch{}}}
+   const allowed={}; const g=window.__CT_CLOUD__.permissions?.global||{}; const admin=!!window.__CT_CLOUD__.user?.isAdmin;
+   if(admin||g.watchlistEdit){for(const k of ['ct_watch','ct_watch_groups'])if(k in collections)allowed[k]=collections[k];}
+   if(admin||g.options){for(const k of ['ct_options_portfolio_v1','ct_options_portfolio_v1_closed','ct_options_portfolio_v1_updated'])if(k in collections)allowed[k]=collections[k];}
+   if(admin||g.optionStrategies){if('ct_option_strategies_v1' in collections)allowed.ct_option_strategies_v1=collections.ct_option_strategies_v1;}
+   if(admin&&'ct_analytics_history' in collections)allowed.ct_analytics_history=collections.ct_analytics_history;
+   if(!Object.keys(allowed).length)return;
+   try{const result=await cloud.saveCollections(allowed,window.__CT_CLOUD__.collectionsRevision);window.__CT_CLOUD__.collectionsRevision=result.revision;}
+   catch(e){console.error('Cloud collections save failed',e);alert('Не вдалося синхронізувати спільні дані: '+e.message+' Перезавантаж дані перед наступними змінами.');}
+   }); return collectionSaveQueue;
+ };
+ window.__ctCloudCan=(id,permission)=>window.__CT_CLOUD__.user?.isAdmin===true||window.__CT_CLOUD__.permissions?.portfolios?.[id]?.[permission]===true;
+ window.__ctCloudOperate=async function(portfolio,operation){const result=await cloud.operate(portfolio,operation);return result;};
+ window.__ctCloudReload=async function(portfolio){await cloud.reloadPortfolio(portfolio);};
+ // The main UI is started only after cloud identity, permissions and visible data are loaded.
 const $=id=>document.getElementById(id);
+const cloudUser=cloudData.user||{};
+if(guestMode){
+ const marketCard=document.querySelector('.grid > section.card');
+ document.querySelectorAll('.grid > section.card').forEach(section=>{if(section!==marketCard)section.hidden=true;});
+ // Backup/restore contains private account data and must never appear in public mode.
+ $('backupRestore').hidden=true;
+ $('guestLogin').hidden=false;$('guestModeLabel').hidden=false;$('guestLoginArea').hidden=false;
+ const login=()=>{location.href=location.origin+'/api/login';};
+ $('guestLogin').onclick=login;$('guestLoginMarket').onclick=login;
+ $('lastUpdate').textContent='Публічний перегляд · приватні дані приховані';
+}else{
+ // The market sign-in prompt is only for guests; authenticated users get identity + logout controls.
+ $('guestLoginArea').hidden=true;$('guestLogin').hidden=true;$('guestModeLabel').hidden=true;
+ $('backupRestore').hidden=false;
+ $('userEmailBadge').textContent=cloudUser.email||'Авторизовано';$('userEmailBadge').hidden=false;$('logoutBtn').hidden=false;
+ $('logoutBtn').onclick=()=>{const target=location.origin+'/';location.href='https://crypto-terminal.cloudflareaccess.com/cdn-cgi/access/logout?returnTo='+encodeURIComponent(target);};
+}
+const cloudCan=(id,permission)=>window.__ctCloudCan(id,permission);
+function applyCloudPermissions(){
+ const g=window.__CT_CLOUD__.permissions?.global||{},admin=!!cloudUser.isAdmin;
+ if(!admin&&!g.watchlistView)$('watchDesk').hidden=true;
+ if(!admin&&!g.options){$('optionsTools').hidden=true;$('optionsDesk').hidden=true;$('optionsPortfolio').hidden=true;}
+ if(!admin&&!g.analytics)$('analyticsDesk').hidden=true;
+ // Portable backups can contain every collection visible to this account; gate export explicitly.
+ if(!admin&&!g.exportData){$('exportBackup').disabled=true;$('exportBackup').title='Потрібен дозвіл exportData.';$('exportSaved').disabled=true;$('exportSaved').title='Потрібен дозвіл exportData.';}
+ if(!admin&&!g.watchlistEdit){['newWatchGroup','renameWatchGroup','deleteWatchGroup','addWatch'].forEach(id=>{if($(id))$(id).disabled=true;});}
+ if(!admin&&!g.options){['addMarketLeg','addManualLeg','buyOptionStrategy','saveStrategy','deleteSaved','loadSaved'].forEach(id=>{if($(id))$(id).disabled=true;});}
+ const p=portfolios.find(x=>x.id===activePortfolio);const trade=!!p&&cloudCan(p.id,'trade'),funds=!!p&&cloudCan(p.id,'funds'),edit=!!p&&cloudCan(p.id,'edit');
+ if($('addPosition'))$('addPosition').disabled=!trade;
+ if($('applyWallet'))$('applyWallet').disabled=!funds;
+ if($('clearDust'))$('clearDust').disabled=!edit;
+ document.querySelectorAll('[data-edit-spot]').forEach(b=>b.disabled=!edit);
+}
+async function cloudRun(portfolio,operation){try{const result=await window.__ctCloudOperate(portfolio,operation);save();return result;}catch(e){if(e.status===409){await window.__ctCloudReload(portfolio).catch(()=>{});save();renderPortfolio();}alert('Хмарна операція не виконана: '+e.message);throw e;}}
+
 const fmt=(n,d=2)=>Number.isFinite(+n)?(+n).toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d}):'—';
 const money=n=>Number.isFinite(+n)?'$'+fmt(n,2):'—';
 function setChange(id,value){
@@ -411,11 +513,7 @@ function setChange(id,value){
 
 let prices={}, watch=JSON.parse(localStorage.getItem('ct_watch')||'[]'), instruments=[];
 const symbols=['BTC','ETH','SOL','BNB','HYPE'];
-let portfolios=JSON.parse(localStorage.getItem('ct_portfolios')||'null');
-if(!Array.isArray(portfolios)||!portfolios.length){
- const legacy=JSON.parse(localStorage.getItem('ct_portfolio')||'[]');
- portfolios=[{id:'p_'+Date.now(),name:'Основний',positions:legacy}];
-}
+let portfolios=Array.isArray(window.__CT_CLOUD_PORTFOLIOS__)?window.__CT_CLOUD_PORTFOLIOS__:[];
 // Migrate v0.2 positions to opening balances. They are not treated as cash purchases.
 portfolios.forEach(p=>{
  p.wallets={USDT:+(p.wallets?.USDT||0),USDC:+(p.wallets?.USDC||0)};p.transactions=Array.isArray(p.transactions)?p.transactions:[];p.positionOverrides=p.positionOverrides&&typeof p.positionOverrides==='object'?p.positionOverrides:{};
@@ -426,10 +524,39 @@ portfolios.forEach(p=>{
 });
 let activePortfolio=localStorage.getItem('ct_last_active_portfolio')||portfolios[0]?.id||'all';
 let portfolioSort={key:null,dir:0};
+let portfolioPnlMode=localStorage.getItem('ct_portfolio_pnl_mode')==='pct'?'pct':'usd';
 let selectedAggregateIds=JSON.parse(localStorage.getItem('ct_aggregate_portfolios')||'null');
 if(!Array.isArray(selectedAggregateIds))selectedAggregateIds=portfolios.map(p=>p.id);
 let tickerPairs=[],bybitTickerPairs=[],bingxTickerPairs=[];
 let analyticsHistory=JSON.parse(localStorage.getItem('ct_analytics_history')||'[]');if(!Array.isArray(analyticsHistory))analyticsHistory=[];
+/* Retain 30 days of raw observations, daily aggregates from 30d to 1y,
+ * monthly aggregates before 1y, and exact first/latest observations. */
+function compactAnalyticsHistory(input,now=Date.now()){
+ const rows=(Array.isArray(input)?input:[]).filter(x=>x&&Number.isFinite(+x.ts)).sort((a,b)=>a.ts-b.ts);
+ if(rows.length<2)return rows;
+ const rawCut=now-30*86400000,yearCut=now-365*86400000;
+ const raw=rows.filter(x=>x.ts>=rawCut&&!x._aggregate);
+ const keepAggregates=rows.filter(x=>x._aggregate&&(x._aggregate.kind==='monthly'||x._aggregate.endTs>=yearCut));
+ const sources=[...rows.filter(x=>x.ts<rawCut&&!x._aggregate),...rows.filter(x=>x._aggregate?.kind==='daily'&&x._aggregate.endTs<yearCut)];
+ const buckets=new Map(),paths=[];
+ const walk=(obj,path=[])=>{for(const [k,v] of Object.entries(obj||{})){if(k==='_aggregate'||k==='first'||k==='last')continue;if(typeof v==='number'&&Number.isFinite(v))paths.push([...path,k]);else if(v&&typeof v==='object'&&!Array.isArray(v))walk(v,[...path,k]);}};
+ rows.forEach(x=>walk(x));const seen=new Set();for(let i=paths.length-1;i>=0;i--){const k=paths[i].join('.');if(seen.has(k))paths.splice(i,1);else seen.add(k);}
+ const get=(obj,path)=>path.reduce((o,k)=>o?.[k],obj),set=(obj,path,value)=>{let o=obj;for(let i=0;i<path.length-1;i++)o=o[path[i]]??=( {} );o[path.at(-1)]=value;};
+ for(const row of sources){const ts=row._aggregate?row._aggregate.startTs:row.ts,d=new Date(ts),daily=!row._aggregate&&ts>=yearCut,key=daily?`D:${d.toISOString().slice(0,10)}`:`M:${d.toISOString().slice(0,7)}`;if(!buckets.has(key))buckets.set(key,[]);buckets.get(key).push(row);}
+ const aggregates=[];
+ for(const [key,items0] of buckets){const items=items0.sort((a,b)=>(a._aggregate?.startTs??a.ts)-(b._aggregate?.startTs??b.ts)),first=items[0]._aggregate?.first||items[0],last=items.at(-1)._aggregate?.last||items.at(-1),out=JSON.parse(JSON.stringify(first)),metrics={};
+  for(const path of paths){const vals=[];for(const item of items){const m=item._aggregate?.metrics?.[path.join('.')];if(m){vals.push({min:m.min,minTs:m.minTs,max:m.max,maxTs:m.maxTs,avg:m.avg,count:m.count||1,first:m.first,firstTs:m.firstTs,last:m.last,lastTs:m.lastTs});}else{const v=get(item,path);if(Number.isFinite(v))vals.push({min:v,minTs:item.ts,max:v,maxTs:item.ts,avg:v,count:1,first:v,firstTs:item.ts,last:v,lastTs:item.ts});}}
+   if(!vals.length)continue;const min=vals.reduce((a,x)=>x.min<a.min?x:a),max=vals.reduce((a,x)=>x.max>a.max?x:a),count=vals.reduce((a,x)=>a+x.count,0),avg=vals.reduce((a,x)=>a+x.avg*x.count,0)/count;const ordered=[...vals].sort((a,b)=>a.firstTs-b.firstTs),lastOrdered=[...vals].sort((a,b)=>a.lastTs-b.lastTs);set(out,path,avg);metrics[path.join('.') ]={min:min.min,minTs:min.minTs,max:max.max,maxTs:max.max,avg,first:ordered[0].first,firstTs:ordered[0].firstTs,last:lastOrdered.at(-1).last,lastTs:lastOrdered.at(-1).lastTs,count};
+  }
+  const startTs=items[0]._aggregate?.startTs??items[0].ts,endTs=items.at(-1)._aggregate?.endTs??items.at(-1).ts;out.ts=Math.round((startTs+endTs)/2);out._aggregate={kind:key.startsWith('D:')?'daily':'monthly',bucket:key.slice(2),startTs,endTs,count:items.reduce((n,x)=>n+(x._aggregate?.count||1),0),first,last,metrics};aggregates.push(out);
+ }
+ const first=rows[0]._aggregate?.first||rows[0],last=rows.at(-1)._aggregate?.last||rows.at(-1);
+ const result=[first,...keepAggregates,...aggregates,...raw.filter(x=>x.ts!==first.ts&&x.ts!==last.ts),last],unique=new Map();
+ for(const x of result)unique.set(`${x.ts}:${x._aggregate?.kind||'raw'}`,x);
+ return [...unique.values()].sort((a,b)=>a.ts-b.ts);
+}
+analyticsHistory=compactAnalyticsHistory(analyticsHistory);
+if(JSON.stringify(analyticsHistory)!==localStorage.getItem('ct_analytics_history'))localStorage.setItem('ct_analytics_history',JSON.stringify(analyticsHistory));
 // Do not record P/L history until the first successful spot-price refresh.
 let analyticsMarketReady=false;
 // Remove leading legacy snapshots captured before spot quotes loaded (zero-valued assets).
@@ -437,12 +564,12 @@ function analyticsSnapshotHasPrices(snap){return Object.values(snap?.assets||{})
 let removedUnpricedSnapshots=0;
 while(analyticsHistory.length&&!analyticsSnapshotHasPrices(analyticsHistory[0])){analyticsHistory.shift();removedUnpricedSnapshots++;}
 if(removedUnpricedSnapshots)localStorage.setItem('ct_analytics_history',JSON.stringify(analyticsHistory));
-function save(){localStorage.setItem('ct_portfolios',JSON.stringify(portfolios));localStorage.setItem('ct_watch',JSON.stringify(watch))}
-function allTransactions(){return portfolios.flatMap(p=>p.transactions.map(t=>({...t,portfolioName:p.name,portfolioId:p.id}))).sort((a,b)=>b.ts-a.ts)}
+function save(){localStorage.setItem('ct_last_active_portfolio',activePortfolio);}
+function allTransactions(){return portfolios.flatMap(p=>p.transactions.filter(t=>!t._cloudProjection).map(t=>({...t,portfolioName:p.name,portfolioId:p.id}))).sort((a,b)=>b.ts-a.ts)}
 function updatePortfolioSelect(){
- if(!portfolios.length)portfolios=[{id:'p_'+Date.now(),name:'Основний',wallets:{USDT:0,USDC:0},transactions:[]}];
- if(!portfolios.some(p=>p.id===activePortfolio))activePortfolio=portfolios[0].id;localStorage.setItem('ct_last_active_portfolio',activePortfolio);
  const sel=$('portfolioSelect');
+ if(!portfolios.length){activePortfolio='';sel.innerHTML='<option value="">Немає портфелів — імпортуй або створи</option>';sel.value='';sel.disabled=true;$('renamePortfolio').disabled=true;$('deletePortfolio').disabled=true;return;}
+ sel.disabled=false;if(!portfolios.some(p=>p.id===activePortfolio))activePortfolio=portfolios[0].id;localStorage.setItem('ct_last_active_portfolio',activePortfolio);
  sel.innerHTML=portfolios.map(p=>`<option value="${p.id}">${p.name.replaceAll('<','&lt;')}</option>`).join('');
  sel.value=activePortfolio;
  $('renamePortfolio').disabled=false;$('deletePortfolio').disabled=portfolios.length<=1;
@@ -466,6 +593,8 @@ function calcLedger(list){
  }
  // Position corrections are replayed at their timestamp, so later real trades use the corrected basis.
  while(eventIndex<events.length)applyEvent(events[eventIndex++]);
+ if(list.__cloudRealizedPnl&&typeof list.__cloudRealizedPnl==='object')Object.entries(list.__cloudRealizedPnl).forEach(([quote,value])=>{if(Number.isFinite(+value))realized[quote]=+value;});
+ if(list.__cloudRealizedPnl&&typeof list.__cloudRealizedPnl==='object'){for(const q of Object.keys(realized))realized[q]=Number(list.__cloudRealizedPnl[q]||0);}
  return {holdings:Object.values(holdings).filter(h=>h.qty>1e-10),realized};
 }
 function appendPositionOverride(p,asset,record){p.positionOverrides=p.positionOverrides||{};const old=p.positionOverrides[asset];let history=[];if(old){history=Array.isArray(old.history)?[...old.history]:Number.isFinite(+old.qty)?[{qty:+old.qty,cost:+old.cost,quote:old.quote||'USDT',ts:Number.isFinite(+old.ts)?+old.ts:record.ts-1}]:[];}history.push({...record});p.positionOverrides[asset]={history};}
@@ -478,12 +607,26 @@ function allPositions(){
  return Object.values(grouped);
 }
 function portfolioTotals(list){let value=0,cost=0,realized={USDT:0,USDC:0},walletValue=0,prevValue=0,complete24=true;list.forEach(p=>{const txs=p.transactions;txs.__positionOverrides=p.positionOverrides||{};const l=calcLedger(txs);Object.entries(l.realized).forEach(([k,v])=>realized[k]=(realized[k]||0)+v);l.holdings.forEach(h=>{const q=prices[h.asset],px=q?.price||0;value+=px*h.qty;cost+=h.cost;if(Number.isFinite(q?.change)&&q.change>-99.999){prevValue+=(px*h.qty)/(1+q.change/100);}else if(h.qty>0){complete24=false;prevValue+=px*h.qty;}});walletValue+=(+p.wallets.USDT||0)+(+p.wallets.USDC||0);});prevValue+=walletValue;const unrealized=value-cost,realizedTotal=realized.USDT+realized.USDC,op=optionSummary(),change24=value+walletValue-prevValue,pct24=prevValue?change24/prevValue*100:0;return {value:value+walletValue,spotValue:value,walletValue,cost,pnl:unrealized+realizedTotal,unrealized,realized,realizedTotal,spotUnrealized:unrealized,spotRealized:realizedTotal,options:op,change24,pct24,complete24}}
+let walletSelectedPortfolio='';
+function walletCanUseOptions(){const g=window.__CT_CLOUD__?.permissions?.global||{};return !!(cloudUser.isAdmin||g.options);}
 function renderWallets(){
- const p=portfolios.find(x=>x.id===activePortfolio);
- const disabled=!p;
- ['walletAction','walletFrom','walletAmount','walletTo','walletRate','walletFee','applyWallet'].forEach(id=>$(id).disabled=disabled);
- $('walletStatus').textContent=p?'Додавання / виведення стейблкоїнів у портфель: '+p.name:'Створи портфель, щоб додати стейблкоїни';
+ const sel=$('walletPortfolioSelect');if(!sel)return;
+ const previous=walletSelectedPortfolio||sel.value||('spot:'+activePortfolio);
+ const spot=portfolios.filter(p=>cloudCan(p.id,'funds')).map(p=>({value:'spot:'+p.id,label:p.name}));
+ const choices=[...spot];if(walletCanUseOptions())choices.push({value:'options',label:'Портфель Опціонів'});
+ sel.innerHTML=choices.map(x=>`<option value="${escapeHtml(x.value)}">${escapeHtml(x.label)}</option>`).join('');
+ walletSelectedPortfolio=choices.some(x=>x.value===previous)?previous:(choices.some(x=>x.value==='spot:'+activePortfolio)?'spot:'+activePortfolio:(choices[0]?.value||''));sel.value=walletSelectedPortfolio;
+ const isOptions=walletSelectedPortfolio==='options',p=isOptions?null:portfolios.find(x=>x.id===walletSelectedPortfolio.replace(/^spot:/,''));
+ const allowed=isOptions?walletCanUseOptions():!!p&&cloudCan(p.id,'funds');
+ ['walletAction','walletFrom','walletAmount','walletTo','walletRate','walletFee','applyWallet'].forEach(id=>$(id).disabled=!allowed);
+ const exchangeOption=$('walletAction').querySelector('option[value="exchange"]');if(exchangeOption)exchangeOption.hidden=isOptions;
+ if(isOptions&&$('walletAction').value==='exchange')$('walletAction').value='deposit';
+ $('walletToWrap').style.display=!isOptions&&$('walletAction').value==='exchange'?'flex':'none';$('walletRateWrap').style.display=!isOptions&&$('walletAction').value==='exchange'?'flex':'none';$('walletFeeWrap').style.display=isOptions?'none':'flex';
+ if(isOptions){const balances=Object.entries(optionCashLedger.wallets||{}).filter(([,v])=>Math.abs(+v)>1e-10).sort(([a],[b])=>a.localeCompare(b));$('walletBalanceSummary').textContent='Баланс Портфеля Опціонів: '+(balances.length?balances.map(([c,v])=>c+' '+fmt(v,8)).join(' · '):'0');$('walletStatus').textContent='Серверний гаманець опціонного портфеля';}
+ else if(p){$('walletBalanceSummary').textContent='Баланс «'+p.name+'»: USDT '+fmt(+p.wallets?.USDT||0,8)+' · USDC '+fmt(+p.wallets?.USDC||0,8);$('walletStatus').textContent='Керування стейблкоїнами портфеля: '+p.name;}
+ else{$('walletBalanceSummary').textContent='Немає доступних портфелів для керування коштами.';$('walletStatus').textContent='Потрібен дозвіл на керування коштами.';}
 }
+$('walletPortfolioSelect').onchange=()=>{walletSelectedPortfolio=$('walletPortfolioSelect').value;renderWallets();};
 let journalDateFilter={from:'',to:''};
 function renderJournal(){
  const all=allTransactions(),from=journalDateFilter.from?new Date(journalDateFilter.from+'T00:00:00').getTime():-Infinity,to=journalDateFilter.to?new Date(journalDateFilter.to+'T23:59:59.999').getTime():Infinity,tx=all.filter(t=>t.ts>=from&&t.ts<=to);
@@ -522,7 +665,7 @@ function recordAnalyticsSnapshot(){
  const op=optionSummary(),optionsByBase={};optionPositions.filter(x=>x.openQty>0).forEach(x=>{const fx=optionFx(x),v=(x.markPrice!==null&&x.markPrice!==undefined&&Number.isFinite(+x.markPrice)&&fx>0)?x.markPrice*x.multiplier*x.openQty*fx:0;optionsByBase[x.base]=(optionsByBase[x.base]||0)+v;});
  const snap={ts:now,spotPnl,optionsPnl:op.total,portMap,values,assets,optionsByBase};const last=analyticsHistory[analyticsHistory.length-1];
  if(last&&now-last.ts<30000&&JSON.stringify([last.spotPnl,last.optionsPnl,last.portMap,last.values,last.assets])===JSON.stringify([snap.spotPnl,snap.optionsPnl,snap.portMap,snap.values,snap.assets]))return;
- analyticsHistory.push(snap);if(analyticsHistory.length>5000)analyticsHistory=analyticsHistory.slice(-5000);localStorage.setItem('ct_analytics_history',JSON.stringify(analyticsHistory));drawAnalytics();
+ analyticsHistory.push(snap);analyticsHistory=compactAnalyticsHistory(analyticsHistory);localStorage.setItem('ct_analytics_history',JSON.stringify(analyticsHistory));if(cloudUser.isAdmin)window.__ctCloudSaveCollections();drawAnalytics();
 }
 function drawDonut(canvasId,legendId,items){const c=$(canvasId);if(!c)return;const ctx=c.getContext('2d'),w=c.clientWidth||260,h=c.clientHeight||190,dpr=window.devicePixelRatio||1;c.width=w*dpr;c.height=h*dpr;ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,w,h);const vals=items.filter(x=>Number.isFinite(x.value)&&x.value>0).sort((a,b)=>b.value-a.value),sum=vals.reduce((a,x)=>a+x.value,0);if(!sum){ctx.fillStyle='#91a2b2';ctx.font='12px system-ui';ctx.textAlign='center';ctx.fillText('Немає даних',w/2,h/2);$(legendId).textContent='';return;}const colors=['#42d6a4','#7cb8ff','#f4bd61','#ff737d','#b69cff','#55c7d9','#d5a0ff','#91a2b2'];let a=-Math.PI/2;const cx=w/2,cy=h/2,r=Math.min(w,h)*.39,inner=r*.58;vals.forEach((x,i)=>{const end=a+x.value/sum*Math.PI*2;ctx.beginPath();ctx.arc(cx,cy,r,a,end);ctx.arc(cx,cy,inner,end,a,true);ctx.closePath();ctx.fillStyle=colors[i%colors.length];ctx.fill();a=end;});ctx.fillStyle='#e7eef5';ctx.font='600 12px ui-monospace';ctx.textAlign='center';ctx.fillText(money(sum),cx,cy+4);$(legendId).innerHTML=vals.slice(0,8).map((x,i)=>`<span style="display:inline-block;margin:2px 8px 2px 0;color:${colors[i%colors.length]}">●</span>${escapeHtml(x.name)} · ${fmt(x.value/sum*100,1)}%`).join('<br>')+(vals.length>8?`<br>+ ще ${vals.length-8}`:'');}
 let analyticsSelectedPointTs=null;
@@ -533,7 +676,9 @@ function drawPnlHistory(){
  const period=$('analyticsPeriod').value,cut=period==='all'?0:Date.now()-Number(period),data=analyticsHistory.filter(x=>x.ts>=cut);
  const scope=$('analyticsScope').value,pid=$('analyticsPortfolio').value,aid=$('analyticsAsset').value;
  const get=x=>scope==='spot'?x.spotPnl:scope==='options'?x.optionsPnl:scope==='portfolio'?(x.portMap?.[pid]||0):scope==='asset'?((x.assets?.[aid]?.value||0)-(x.assets?.[aid]?.cost||0)):x.spotPnl+x.optionsPnl;
- const vals=data.map(x=>({ts:x.ts,v:get(x)}));
+ const rawVals=data.map(x=>({ts:x.ts,v:get(x)}));
+ // Keep at most 60 evenly spaced display points, preserving the first and last observations.
+ const vals=rawVals.length<=60?rawVals:Array.from({length:60},(_,i)=>rawVals[Math.round(i*(rawVals.length-1)/59)]);
  const detail=$('analyticsPointDetail');
  ctx.strokeStyle='#263746';ctx.lineWidth=1;
  for(let i=1;i<=4;i++){const y=15+(h-45)*i/4;ctx.beginPath();ctx.moveTo(45,y);ctx.lineTo(w-12,y);ctx.stroke();}
@@ -587,6 +732,7 @@ function drawAnalytics(){if(!$('portfolioPnlHistory'))return;const selected=port
  $('analyticsPortfolioRows').innerHTML=selected.length?selected.map(p=>{const t=portfolioTotals([p]);return `<tr><td>${escapeHtml(p.name)}</td><td class="num">${money(t.value)}</td><td class="num ${t.pnl>=0?'positive':'negative'}">${(t.pnl>=0?'+':'')+money(t.pnl)}</td><td class="num">${money(t.realizedTotal)}</td></tr>`}).join(''):'<tr><td colspan="4" class="empty">Не вибрано портфелів</td></tr>';
  const ag={};selected.forEach(p=>{p.transactions.__positionOverrides=p.positionOverrides||{};const l=calcLedger(p.transactions);l.holdings.forEach(h=>{const a=ag[h.asset]||(ag[h.asset]={qty:0,cost:0});a.qty+=h.qty;a.cost+=h.cost;});['USDT','USDC'].forEach(k=>{const q=+(p.wallets?.[k]||0);if(q){const a=ag[k]||(ag[k]={qty:0,cost:0,stable:true});a.qty+=q;a.cost+=q;a.stable=true;}});});const rows=Object.entries(ag).map(([asset,a])=>{const px=a.stable?1:(prices[asset]?.price||0),change=a.stable?0:prices[asset]?.change,val=px*a.qty;return {asset,...a,px,val,pnl:a.stable?0:val-a.cost,change};}).filter(x=>x.val>=.10).sort((a,b)=>b.val-a.val);$('analyticsAssetRows').innerHTML=rows.length?rows.map(x=>`<tr><td class="asset">${escapeHtml(x.asset)}</td><td class="num">${money(x.val)}</td><td class="num">${money(x.cost)}</td><td class="num ${x.pnl>=0?'positive':'negative'}">${(x.pnl>=0?'+':'')+money(x.pnl)}</td><td class="num ${Number.isFinite(x.change)?(x.change>=0?'positive':'negative'):'muted'}">${Number.isFinite(x.change)?(x.change>0?'+':'')+fmt(x.change,2)+'%':'—'}</td></tr>`).join(''):'<tr><td colspan="5" class="empty">Немає активів для відображення</td></tr>';
 }
+$('opPnlUnrealized').onclick=()=>{optionPnlMode='unrealized';renderOptionsPortfolio();};$('opPnlRealized').onclick=()=>{optionPnlMode='realized';renderOptionsPortfolio();};
 $('analyticsPeriod').onchange=drawAnalytics;
 function renderPortfolio(){
  const selected=portfolios.filter(p=>p.id===activePortfolio);
@@ -598,7 +744,7 @@ function renderPortfolio(){
   g.qty+=h.qty;g.cost+=h.cost;g.owners.push(p.name);
  });});
  const rows=Object.values(grouped).map(g=>({...g,entry:g.qty?g.cost/g.qty:0}));
- // Stablecoin wallet balances are first-class portfolio assets, always shown before volatile assets.
+ // Баланси стейблкоїнів — повноцінна частина портфеля, відображаються перед волатильними активами.
  const stableRows=[];
  if(p){
   for(const symbol of ['USDT','USDC']){
@@ -612,71 +758,74 @@ function renderPortfolio(){
  const rowMetrics=h=>{const px=h.stable?1:(prices[h.asset]?.price||0),value=px*h.qty,invested=h.stable?h.qty:h.cost,pnl=h.stable?0:value-h.cost;return {value,invested,pnl}};
  if(portfolioSort.key&&portfolioSort.dir){displayRows=[...displayRows].sort((a,b)=>{const av=rowMetrics(a)[portfolioSort.key],bv=rowMetrics(b)[portfolioSort.key];return (av-bv)*portfolioSort.dir;});}
  $('portfolioRows').innerHTML=displayRows.length?displayRows.map(h=>{
-  const px=h.stable?1:(prices[h.asset]?.price||0),val=px*h.qty,pl=h.stable?0:val-h.cost,invested=h.stable?h.qty:h.cost;
-  return `<tr><td class="asset">${escapeHtml(h.asset)}<small>${h.stable?'Stablecoin wallet': [...new Set(h.owners)].join(', ')}</small></td><td class="num">${fmt(h.qty,5)}</td><td class="num">${h.stable?money(1):money(h.entry)}</td><td class="num">${money(px)}</td><td class="num">${money(val)}</td><td class="num">${money(invested)}</td><td class="num ${pl>=0?'positive':'negative'}">${h.stable?money(0):(px?(pl>=0?'+':'')+money(pl):'—')}</td><td>${h.stable?'—':`<button class="smallbtn" data-edit-spot="${escapeHtml(h.asset)}">Редагувати</button>`}</td></tr>`;
+  const px=h.stable?1:(prices[h.asset]?.price||0),val=px*h.qty,pl=h.stable?0:val-h.cost,invested=h.stable?h.qty:h.cost,pct=invested>0?pl/invested*100:0;
+  const pnlText=portfolioPnlMode==='pct'?(h.stable?'0.00%':`${pct>=0?'+':''}${pct.toFixed(2)}%`):(h.stable?money(0):(px?(pl>=0?'+':'')+money(pl):'—'));
+  return `<tr><td class="asset">${escapeHtml(h.asset)}<small>${h.stable?'Гаманець стейблкоїнів': [...new Set(h.owners)].join(', ')}</small></td><td class="num">${fmt(h.qty,5)}</td><td class="num">${h.stable?money(1):money(h.entry)}</td><td class="num">${money(px)}</td><td class="num">${money(val)}</td><td class="num">${money(invested)}</td><td class="num ${pl>=0?'positive':'negative'}">${pnlText}</td><td>${h.stable?'—':`<button class="smallbtn" data-edit-spot="${escapeHtml(h.asset)}">Редагувати</button>`}</td></tr>`;
  }).join(''):'<tr><td colspan="8" class="empty">У цьому портфелі немає активів вище порога 0,10 USDT</td></tr>';
  $('sortValueIcon').textContent=portfolioSort.key==='value'?(portfolioSort.dir===-1?'↓':'↑'):'↕';$('sortPnlIcon').textContent=portfolioSort.key==='pnl'?(portfolioSort.dir===-1?'↓':'↑'):'↕';$('sortInvestedIcon').textContent=portfolioSort.key==='invested'?(portfolioSort.dir===-1?'↓':'↑'):'↕';$('sortValue').classList.toggle('active',portfolioSort.key==='value');$('sortPnl').classList.toggle('active',portfolioSort.key==='pnl');$('sortInvested').classList.toggle('active',portfolioSort.key==='invested');
  $('sortValue').onclick=()=>{portfolioSort=portfolioSort.key!=='value'?{key:'value',dir:-1}:portfolioSort.dir===-1?{key:'value',dir:1}:{key:null,dir:0};renderPortfolio()};$('sortPnl').onclick=()=>{portfolioSort=portfolioSort.key!=='pnl'?{key:'pnl',dir:-1}:portfolioSort.dir===-1?{key:'pnl',dir:1}:{key:null,dir:0};renderPortfolio()};$('sortInvested').onclick=()=>{portfolioSort=portfolioSort.key!=='invested'?{key:'invested',dir:-1}:portfolioSort.dir===-1?{key:'invested',dir:1}:{key:null,dir:0};renderPortfolio()};
  $('portValue').textContent=money(selTotals.value);
- $('portPnl').textContent=(selTotals.unrealized>=0?'+':'')+money(selTotals.unrealized);
+ const selectedInvested=p?(calcLedger(p.transactions).holdings.reduce((sum,h)=>sum+(+h.cost||0),0)+(+p.wallets?.USDT||0)+(+p.wallets?.USDC||0)):0;
+ const pnlPct=selectedInvested>0?selTotals.unrealized/selectedInvested*100:0;
+ $('portPnl').textContent=portfolioPnlMode==='pct'?`${pnlPct>=0?'+':''}${pnlPct.toFixed(2)}%`:(selTotals.unrealized>=0?'+':'')+money(selTotals.unrealized);
  $('portPnl').className=selTotals.unrealized>=0?'positive':'negative';
+ $('pnlModeUsd').classList.toggle('active',portfolioPnlMode==='usd');$('pnlModePct').classList.toggle('active',portfolioPnlMode==='pct');
+ $('pnlModeUsd').setAttribute('aria-pressed',String(portfolioPnlMode==='usd'));$('pnlModePct').setAttribute('aria-pressed',String(portfolioPnlMode==='pct'));
  $('portRealized').textContent=(selTotals.realizedTotal>=0?'+':'')+money(selTotals.realizedTotal);
- $('portCount').textContent=displayRows.length;document.querySelectorAll('[data-edit-spot]').forEach(b=>b.onclick=()=>editSpotPosition(b.dataset.editSpot));
+ $('portCostBasis').textContent=money(selectedInvested);document.querySelectorAll('[data-edit-spot]').forEach(b=>b.onclick=()=>editSpotPosition(b.dataset.editSpot));
  $('portfolioHint').textContent='Поточний портфель: '+(p?.name||'—')+'. Spot-активи та опціони обліковуються окремо; загальна аналітика враховує P/L обох модулів.';
- renderAllPortfolios();renderWallets();renderJournal();renderOptionsPortfolio();recordAnalyticsSnapshot();
+ renderAllPortfolios();renderWallets();renderJournal();renderOptionsPortfolio();recordAnalyticsSnapshot();applyCloudPermissions();
 }
 
-function editSpotPosition(asset){
+async function editSpotPosition(asset){
  const p=portfolios.find(x=>x.id===activePortfolio);if(!p)return;
+ if(!cloudCan(p.id,'edit'))return alert('Немає права редагувати цей портфель.');
  const txs=p.transactions;txs.__positionOverrides=p.positionOverrides||{};
  const h=calcLedger(txs).holdings.find(x=>x.asset===asset);if(!h)return;
  const qty=Number(prompt('Нова кількість '+asset+':',String(h.qty)));if(!Number.isFinite(qty)||qty<0)return alert('Некоректна кількість.');
  const avg=qty>0?Number(prompt('Нова середня собівартість за 1 '+asset+' ($):',String(h.cost/h.qty))):0;
  if(qty>0&&(!Number.isFinite(avg)||avg<0))return alert('Некоректна собівартість.');
- const newCost=qty*avg,delta=newCost-h.cost,quote=h.quote||'USDT';p.wallets=p.wallets||{USDT:0,USDC:0};if(delta>0&&(+p.wallets[quote]||0)+1e-9<delta)return alert(`Недостатньо ${quote} для збільшення вкладеної суми. Потрібно ${fmt(delta,2)}, доступно ${fmt(p.wallets[quote]||0,2)}.`);p.wallets[quote]=(+p.wallets[quote]||0)-delta;appendPositionOverride(p,asset,{qty,cost:newCost,quote,ts:Date.now()});save();renderPortfolio();
+ try{await cloudRun(p,{type:'manualEdit',asset,qty,cost:qty*avg,quote:h.quote||'USDT',ts:Date.now()});renderPortfolio();}catch{}
 }
 
-function addPosition(operationTs){
+async function addPosition(operationTs){
  const p=portfolios.find(x=>x.id===activePortfolio);if(!p)return;
  const side=$('tradeSide').value,asset=$('pAsset').value.trim().toUpperCase(),qty=+$('pQty').value,price=+$('pEntry').value,quote=$('tradeQuote').value,fee=+$('tradeFee').value;
  if(!asset||qty<=0||price<=0||fee<0)return alert('Перевір тікер, кількість, ціну та комісію.');
- const gross=qty*price;
- if(side==='buy'){
-  if((+p.wallets[quote]||0)<gross+fee)return alert(`Недостатньо ${quote}. Потрібно ${fmt(gross+fee,4)}, доступно ${fmt(p.wallets[quote]||0,4)}.`);
-  p.wallets[quote]-=gross+fee;
- }else{
-  const held=calcLedger(p.transactions).holdings.find(x=>x.asset===asset);
-  if(!held||held.qty+1e-10<qty)return alert(`Недостатньо ${asset} для продажу. У портфелі: ${fmt(held?.qty||0,8)}.`);
-  p.wallets[quote]=(p.wallets[quote]||0)+gross-fee;
- }
- p.transactions.push({id:'tx_'+Date.now()+'_'+Math.random().toString(36).slice(2,7),type:side,asset,qty,price,quote,fee,ts:operationTs||Date.now()});
- save();['pAsset','pQty','pEntry'].forEach(id=>$(id).value='');$('tradeFee').value='0';renderPortfolio();refresh();
+ if(!cloudCan(p.id,'trade'))return alert('Немає права торгувати в цьому портфелі.');
+ if(side==='sell'){const held=calcLedger(p.transactions).holdings.find(x=>x.asset===asset);if(!held||held.qty+1e-10<qty)return alert(`Недостатньо ${asset} для продажу. У портфелі: ${fmt(held?.qty||0,8)}.`);}
+ try{await cloudRun(p,{type:side,asset,qty,price,quote,fee,ts:operationTs||Date.now()});save();['pAsset','pQty','pEntry'].forEach(id=>$(id).value='');$('tradeFee').value='0';renderPortfolio();refresh();}catch{}
 }
-function clearDust(){
- let eligible=[];for(const p of portfolios){p.transactions.__positionOverrides=p.positionOverrides||{};for(const h of calcLedger(p.transactions).holdings){if(['USDT','USDC'].includes(h.asset))continue;const px=prices[h.asset]?.price||0,val=px*h.qty;if(px>0&&val<0.01)eligible.push({p,h,val});}}
- const total=eligible.reduce((a,x)=>a+x.val,0);if(!eligible.length)return alert('Немає криптоактивів вартістю менше 0,01 USDT для очищення.');
- if(!confirm(`Знайдено ${eligible.length} позицій загальною поточною вартістю ${fmt(total,4)} USDT. Видалити їх лише з активних позицій? Історія транзакцій і баланси USDT/USDC залишаться без змін.`))return;
- eligible.forEach(({p,h})=>appendPositionOverride(p,h.asset,{qty:0,cost:0,quote:h.quote||'USDT',ts:Date.now()}));save();$('dustStatus').textContent=`Очищено ${eligible.length} позицій · ${fmt(total,4)} USDT`;renderPortfolio();
+
+async function clearDust(){
+ let eligible=[];for(const p of portfolios){if(!cloudCan(p.id,'edit'))continue;p.transactions.__positionOverrides=p.positionOverrides||{};for(const h of calcLedger(p.transactions).holdings){if(['USDT','USDC'].includes(h.asset))continue;const px=prices[h.asset]?.price||0,val=px*h.qty;if(px>0&&val<0.01)eligible.push({p,h,val});}}
+ const total=eligible.reduce((a,x)=>a+x.val,0);if(!eligible.length)return alert('Немає доступних позицій вартістю менше 0,01 USDT для очищення.');
+ if(!confirm(`Знайдено ${eligible.length} позицій загальною поточною вартістю ${fmt(total,4)} USDT. Видалити їх лише з активних позицій? Історія транзакцій і баланси залишаться без змін.`))return;
+ for(const {p,h} of eligible){try{await cloudRun(p,{type:'dustCleanup',asset:h.asset,quote:h.quote||'USDT',ts:Date.now()});}catch{return;}}
+ $('dustStatus').textContent=`Очищено ${eligible.length} позицій · ${fmt(total,4)} USDT`;renderPortfolio();
 }
 $('clearDust').onclick=clearDust;
-$('portfolioSelect').onchange=e=>{activePortfolio=e.target.value;localStorage.setItem('ct_last_active_portfolio',activePortfolio);renderPortfolio();updatePortfolioSelect()};
-$('createPortfolio').onclick=()=>{const name=prompt('Назва нового портфеля:');if(!name||!name.trim())return;const p={id:'p_'+Date.now()+'_'+Math.random().toString(36).slice(2,7),name:name.trim(),wallets:{USDT:0,USDC:0},transactions:[]};portfolios.push(p);selectedAggregateIds.push(p.id);localStorage.setItem('ct_aggregate_portfolios',JSON.stringify(selectedAggregateIds));activePortfolio=p.id;save();updatePortfolioSelect();renderPortfolio()};
-$('renamePortfolio').onclick=()=>{const p=portfolios.find(x=>x.id===activePortfolio);if(!p)return;const name=prompt('Нова назва портфеля:',p.name);if(!name||!name.trim())return;p.name=name.trim();save();updatePortfolioSelect();renderPortfolio()};
-$('deletePortfolio').onclick=()=>{const p=portfolios.find(x=>x.id===activePortfolio);if(!p)return;if(!confirm(`Видалити портфель «${p.name}» разом з усіма його угодами та гаманцями?`))return;portfolios=portfolios.filter(x=>x.id!==activePortfolio);selectedAggregateIds=selectedAggregateIds.filter(id=>id!==activePortfolio);localStorage.setItem('ct_aggregate_portfolios',JSON.stringify(selectedAggregateIds));if(!portfolios.length)portfolios=[{id:'p_'+Date.now(),name:'Основний',wallets:{USDT:0,USDC:0},transactions:[]}];activePortfolio=portfolios[0].id;save();updatePortfolioSelect();renderPortfolio()};
-$('addPosition').onclick=()=>openOperationDateDialog(()=>addPosition(selectedOperationTimestamp),'угоди');$('refreshBtn').onclick=refresh;
+$('portfolioSelect').onchange=e=>{activePortfolio=e.target.value;localStorage.setItem('ct_last_active_portfolio',activePortfolio);renderPortfolio();updatePortfolioSelect();applyCloudPermissions()};
+$('createPortfolio').onclick=async()=>{if(!cloudUser.isAdmin)return alert('Створювати портфелі може адміністратор.');const name=prompt('Назва нового портфеля:');if(!name||!name.trim())return;try{const r=await window.__CT_CLOUD__.api.createPortfolio(name.trim());const p={id:r.portfolio.id,name:r.portfolio.name,wallets:{USDT:0,USDC:0},transactions:[],positionOverrides:{},_cloudRevision:1,_cloudHasHistory:true,_cloudCanHistory:true};portfolios.push(p);activePortfolio=p.id;save();updatePortfolioSelect();renderPortfolio();alert('Портфель створено. Доступ іншим користувачам потрібно надати окремо в Admin Panel.');}catch(e){alert('Не вдалося створити портфель: '+e.message)}};
+$('renamePortfolio').onclick=async()=>{const p=portfolios.find(x=>x.id===activePortfolio);if(!p)return;if(!cloudUser.isAdmin)return alert('Перейменовувати портфелі може адміністратор.');const name=prompt('Нова назва портфеля:',p.name);if(!name||!name.trim())return;try{await window.__CT_CLOUD__.api.renamePortfolio(p.id,name.trim());p.name=name.trim();save();updatePortfolioSelect();renderPortfolio();}catch(e){alert('Не вдалося перейменувати портфель: '+e.message)}};
+$('deletePortfolio').onclick=async()=>{const p=portfolios.find(x=>x.id===activePortfolio);if(!p)return;if(!cloudUser.isAdmin)return alert('Архівувати портфелі може адміністратор.');if(!confirm(`Архівувати портфель «${p.name}»? Дані та історія збережуться в архіві.`))return;try{await window.__CT_CLOUD__.api.archivePortfolio(p.id);portfolios=portfolios.filter(x=>x.id!==p.id);selectedAggregateIds=selectedAggregateIds.filter(id=>id!==p.id);activePortfolio=portfolios[0]?.id||'';save();updatePortfolioSelect();renderPortfolio();}catch(e){alert('Не вдалося архівувати портфель: '+e.message)}};
+$('addPosition').onclick=()=>openOperationDateDialog(()=>addPosition(window.selectedOperationTimestamp),'угоди');$('refreshBtn').onclick=refresh;
 $('journalDateFrom').onchange=e=>{journalDateFilter.from=e.target.value;renderJournal()};$('journalDateTo').onchange=e=>{journalDateFilter.to=e.target.value;renderJournal()};$('journalDateClear').onclick=()=>{journalDateFilter={from:'',to:''};$('journalDateFrom').value=$('journalDateTo').value='';renderJournal()};
-$('walletAction').onchange=()=>{const ex=$('walletAction').value==='exchange';$('walletToWrap').style.display=ex?'flex':'none';$('walletRateWrap').style.display=ex?'flex':'none'};
-function applyWallet(operationTs){
- const p=portfolios.find(x=>x.id===activePortfolio);if(!p)return;
- const action=$('walletAction').value,from=$('walletFrom').value,amount=+$('walletAmount').value,fee=+$('walletFee').value;
- if(amount<=0||fee<0)return alert('Вкажи коректну суму та комісію.');
- const tx={id:'w_'+Date.now(),type:action,amount,currency:from,fee,ts:operationTs||Date.now()};
- if(action==='deposit'){p.wallets[from]=(p.wallets[from]||0)+amount;}
- if(action==='withdraw'){if((p.wallets[from]||0)<amount+fee)return alert('Недостатньо коштів з урахуванням комісії.');p.wallets[from]-=amount+fee;}
- if(action==='exchange'){const to=$('walletTo').value,rate=+$('walletRate').value;if(to===from||rate<=0)return alert('Обери іншу валюту та коректний курс.');if((p.wallets[from]||0)<amount+fee)return alert('Недостатньо коштів для обміну з урахуванням комісії.');p.wallets[from]-=amount+fee;p.wallets[to]=(p.wallets[to]||0)+amount*rate;tx.to=to;tx.rate=rate;}
- p.transactions.push(tx);save();$('walletAmount').value='';$('walletFee').value='0';renderPortfolio();
+$('walletAction').onchange=()=>renderWallets();
+async function applyWallet(operationTs){
+ const target=$('walletPortfolioSelect').value,action=$('walletAction').value,from=$('walletFrom').value,amount=+$('walletAmount').value;
+ if(!Number.isFinite(amount)||amount<=0)return alert('Вкажи коректну суму.');
+ if(target==='options'){
+  if(!walletCanUseOptions())return alert('Немає права керувати коштами опціонного портфеля.');
+  try{const result=await window.__CT_CLOUD__.api.operateOptionsCash({type:action,currency:from,amount},optionCashLedger.revision||0);optionCashLedger=result.ledger;$('walletAmount').value='';$('walletStatus').textContent='Оновлено: '+new Date().toLocaleTimeString('uk-UA');renderWallets();renderOptionsPortfolio();}catch(e){if(e.status===409){try{const latest=await window.__CT_CLOUD__.api.getOptionsCash();optionCashLedger=latest.ledger;}catch{}renderWallets();renderOptionsPortfolio();}alert('Не вдалося змінити баланс: '+e.message);}return;
+ }
+ const p=portfolios.find(x=>x.id===target.replace(/^spot:/,''));if(!p)return;
+ const fee=+$('walletFee').value;if(!cloudCan(p.id,'funds'))return alert('Немає права керувати коштами цього портфеля.');if(fee<0)return alert('Вкажи коректну комісію.');
+ const tx={type:action,amount,currency:from,fee,ts:operationTs||Date.now()};
+ if(action==='exchange'){const to=$('walletTo').value,rate=+$('walletRate').value;if(to===from||rate<=0)return alert('Обери іншу валюту та коректний курс.');tx.from=from;tx.to=to;tx.rate=rate;}
+ try{await cloudRun(p,tx);$('walletAmount').value='';$('walletFee').value='0';renderPortfolio();renderWallets();}catch{}
 }
-$('applyWallet').onclick=()=>openOperationDateDialog(()=>applyWallet(selectedOperationTimestamp),$('walletAction').value==='deposit'?'поповнення':$('walletAction').value==='withdraw'?'виведення':'обміну');
+$('applyWallet').onclick=()=>openOperationDateDialog(()=>applyWallet(window.selectedOperationTimestamp),$('walletAction').value==='deposit'?'поповнення':$('walletAction').value==='withdraw'?'виведення':'обміну');
 const BINGX_WORKER_URL='https://crypto-terminal-bingx.targonya98.workers.dev';
 
 async function loadTickerDirectory(){
@@ -705,13 +854,47 @@ async function loadTickerDirectory(){
 function attachTickerSuggest(inputId,listId){const input=$(inputId),list=$(listId);if(!input||!list)return;input.addEventListener('input',()=>{const q=input.value.trim().toUpperCase();if(!q){list.hidden=true;return;}const all=[...tickerPairs,...bybitTickerPairs,...bingxTickerPairs],hits=all.filter(x=>x.quote==='USDT'&&(x.base.includes(q)||x.symbol.includes(q))).filter((x,i,a)=>a.findIndex(y=>y.base===x.base)===i).slice(0,12);list.innerHTML=hits.map(x=>`<button type="button" data-ticker="${escapeHtml(x.base)}">${escapeHtml(x.base)} <span class="muted">· ${escapeHtml(x.symbol)} · ${escapeHtml(x.exchange)}</span></button>`).join('');list.hidden=!hits.length;list.querySelectorAll('[data-ticker]').forEach(b=>b.onclick=()=>{input.value=b.dataset.ticker;list.hidden=true;});});input.addEventListener('blur',()=>setTimeout(()=>list.hidden=true,150));}
 attachTickerSuggest('wAsset','wAssetSuggestions');attachTickerSuggest('pAsset','pAssetSuggestions');
 
+async function saveMarketDataSnapshot(assets){
+ if(guestMode)return;
+ const snapshotPrices={};
+ for(const asset of assets){
+  const q=prices[asset];
+  if(!q||!(Number(q.price)>0)||!Number.isFinite(Number(q.price)))continue;
+  const quote={price:Number(q.price)};
+  if(q.change!==undefined&&q.change!==null&&Number.isFinite(Number(q.change)))quote.change24h=Number(q.change);
+  snapshotPrices[asset]=quote;
+ }
+ if(!Object.keys(snapshotPrices).length)return;
+ const sources=[...new Set(Object.keys(snapshotPrices).map(asset=>prices[asset]?.source).filter(Boolean))];
+ try{
+  const response=await fetch('/api/market-data/main/snapshot',{
+   method:'POST',
+   headers:{'Content-Type':'application/json'},
+   body:JSON.stringify({
+    source:'Crypto Terminal Spot · '+(sources.join('/')||'unknown'),
+    submittedAt:new Date().toISOString(),
+    prices:snapshotPrices
+   })
+  });
+  const result=await response.json().catch(()=>null);
+  if(!response.ok||!result?.ok){
+   console.warn('Market snapshot was not saved:',result?.error||('HTTP '+response.status));
+   return;
+  }
+  if(result.saved)console.info('Market snapshot saved:',result);
+  else if(result.reason==='cooldown')console.info('Market snapshot skipped by 10-minute cooldown; live quotes remain updated.');
+ }catch(error){
+  console.warn('Market snapshot request failed; live quotes remain updated:',error);
+ }
+}
+
 async function refresh(){
  const btn=$('refreshBtn');if(btn.disabled)return;btn.disabled=true;btn.textContent='Оновлюю…';
  try{
- let spotError='',spotOk=false,spotUpdated=0,spotMissing=0,optionResult={ok:0,fail:0};
+ let spotError='',spotOk=false,spotUpdated=0,spotMissing=0,optionResult={ok:0,fail:0},requested=[];
  try{
   try{if(!tickerPairs.length||!bybitTickerPairs.length||!bingxTickerPairs.length)await loadTickerDirectory();}catch(e){console.warn('Ticker directory load failed',e);}
-  const requested=[...new Set([...symbols,...allPositions().map(x=>x.asset),...watch.map(x=>x.asset)])].map(x=>String(x).toUpperCase()).filter(x=>x&&!['USDT','USDC'].includes(x));
+  requested=[...new Set([...symbols,...allPositions().map(x=>x.asset),...watch.map(x=>x.asset)])].map(x=>String(x).toUpperCase()).filter(x=>x&&!['USDT','USDC'].includes(x));
   requested.forEach(asset=>{delete prices[asset];});
   const binanceBases=new Set(tickerPairs.filter(x=>x.quote==='USDT').map(x=>x.base));
   const binanceRequested=requested.filter(base=>!tickerPairs.length||binanceBases.has(base));
@@ -748,14 +931,15 @@ async function refresh(){
  symbols.forEach(s=>{const q=prices[s];$(s.toLowerCase()+'Price').textContent=q?money(q.price):'—';if(q)setChange(s.toLowerCase()+'Change',q.change);});
  try{optionResult=await refreshOptionMarks();}catch(e){optionResult={ok:0,fail:optionPositions.filter(x=>x.openQty>0).length};console.error('Options refresh failed',e);}
  try{renderPortfolio();renderWatch();}catch(e){console.error('Render after refresh failed',e);}
- if(spotOk||optionResult.ok){spotLastUpdate=Date.now();localStorage.setItem('ct_spot_last_update',String(spotLastUpdate));const sources=[...new Set(requested.map(a=>prices[a]?.source).filter(Boolean))].join('+')||'—';$('lastUpdate').innerHTML='<b>● Оновлено</b> '+new Date(spotLastUpdate).toLocaleString('uk-UA')+' · Spot '+spotUpdated+'/'+requested.length+' ('+sources+')'+(spotMissing?' · без ціни: '+spotMissing:'')+' · Options '+optionResult.ok+'/'+(optionResult.ok+optionResult.fail);}else $('lastUpdate').textContent='Помилка оновлення: '+(spotError||'котирування недоступні');
+ if(spotOk)void saveMarketDataSnapshot(requested);
+ if(spotOk||optionResult.ok){spotLastUpdate=Date.now();localStorage.setItem('ct_spot_last_update',String(spotLastUpdate));const sources=[...new Set(requested.map(a=>prices[a]?.source).filter(Boolean))].join('+')||'—';$('lastUpdate').innerHTML='<b>● Оновлено</b> '+new Date(spotLastUpdate).toLocaleString('uk-UA')+' · Spot '+spotUpdated+'/'+requested.length+' ('+sources+')'+(spotMissing?' · без ціни: '+spotMissing:'')+' · Options '+optionResult.ok+'/'+(optionResult.ok+optionResult.fail);}else {const last=Number(localStorage.getItem('ct_spot_last_update')||0);$('lastUpdate').textContent='Помилка оновлення: '+(spotError||'котирування недоступні')+(last?' · останнє успішне: '+new Date(last).toLocaleString('uk-UA')+' (дані можуть бути застарілими)':'');}
   try{await loadInstrumentList();}catch(e){console.warn('Option instrument list refresh failed',e);}
   if(spotError&&optionResult.ok)$('lastUpdate').textContent+=' · '+spotError;
  }finally{btn.disabled=false;btn.textContent='↻ Оновити дані';}
 }
 let watchGroups=JSON.parse(localStorage.getItem('ct_watch_groups')||'["Основний"]');if(!Array.isArray(watchGroups)||!watchGroups.length)watchGroups=['Основний'];
 watch=watch.map(w=>({...w,group:watchGroups.includes(w.group)?w.group:watchGroups[0]}));
-function saveWatch(){localStorage.setItem('ct_watch',JSON.stringify(watch));localStorage.setItem('ct_watch_groups',JSON.stringify(watchGroups));}
+function saveWatch(){localStorage.setItem('ct_watch',JSON.stringify(watch));localStorage.setItem('ct_watch_groups',JSON.stringify(watchGroups));window.__ctCloudSaveCollections();}
 // null = початковий порядок; -1 = зростання 24H за спаданням; 1 = від найбільшого падіння до найменшого
 let watch24hSortDirection=null;
 function renderWatch(){
@@ -776,6 +960,8 @@ function renderWatch(){
  document.querySelectorAll('[data-watch-toggle]').forEach(btn=>btn.onclick=()=>{const sel=document.querySelector(`[data-watch-move="${btn.dataset.watchToggle}"]`);if(!sel)return;document.querySelectorAll('.watch-move-select').forEach(other=>{if(other!==sel)other.hidden=true;});sel.hidden=!sel.hidden;if(!sel.hidden)sel.focus();});
  document.querySelectorAll('[data-watch-move]').forEach(el=>el.onchange=()=>{const i=+el.dataset.watchMove;if(watch[i]){watch[i].group=el.value;saveWatch();renderWatch();}});
  document.querySelectorAll('[data-watch-target]').forEach(el=>el.onclick=()=>{const i=+el.dataset.watchTarget;if(!watch[i])return;const raw=prompt('Нова цільова ціна для '+watch[i].asset+' (0 — прибрати ціль):',watch[i].target??'0');if(raw===null)return;const n=Number(raw);if(!Number.isFinite(n)||n<0)return alert('Введи коректну ціну або 0.');watch[i].target=n===0?null:n;saveWatch();renderWatch();});
+ const canEditWatch=!!cloudUser.isAdmin||window.__CT_CLOUD__.permissions?.global?.watchlistEdit===true;
+ if(!canEditWatch){document.querySelectorAll('[data-watch-toggle],[data-watch-move],.watch-remove-btn').forEach(el=>el.disabled=true);document.querySelectorAll('[data-watch-target]').forEach(el=>{el.style.pointerEvents='none';el.removeAttribute('title');});}
 }
 window.removeWatch=i=>{watch.splice(i,1);saveWatch();renderWatch()};
 $('addWatch').onclick=()=>{const asset=$('wAsset').value.trim().toUpperCase(),raw=$('wTarget').value,target=raw===''?null:Number(raw),group=$('watchGroupFilter').value==='all'?watchGroups[0]:$('watchGroupFilter').value;if(!asset||(target!==null&&(!Number.isFinite(target)||target<=0)))return alert('Перевір тікер і цільову ціну. Ціль можна залишити порожньою.');if(watch.some(w=>w.asset===asset))return alert('Цей актив уже є у списку.');watch.push({asset,target,group});saveWatch();$('wAsset').value=$('wTarget').value='';renderWatch()};
@@ -789,17 +975,20 @@ const optionsStoreKey='ct_options_portfolio_v1';
 let optionPositions=JSON.parse(localStorage.getItem(optionsStoreKey)||'[]');
 optionPositions.forEach(p=>{const clean=String(p.strategyName||'').replace(/(?:\s*[·-]\s*відкрито)+$/gi,'').trim();p.strategyName=clean.toLowerCase()==='custom strategy'?'':clean;});
 let optionClosed=JSON.parse(localStorage.getItem(optionsStoreKey+'_closed')||'[]');
+let optionCashLedger=window.__CT_CLOUD__?.data?.optionsCash?.ledger||{revision:0,wallets:{},journal:[]};
 let optionLastUpdate=Number(localStorage.getItem(optionsStoreKey+'_updated'))||null;let spotLastUpdate=Number(localStorage.getItem('ct_spot_last_update'))||null;
-function saveOptions(){localStorage.setItem(optionsStoreKey,JSON.stringify(optionPositions));localStorage.setItem(optionsStoreKey+'_closed',JSON.stringify(optionClosed));}
+function saveOptions(){localStorage.setItem(optionsStoreKey,JSON.stringify(optionPositions));localStorage.setItem(optionsStoreKey+'_closed',JSON.stringify(optionClosed));localStorage.setItem(optionsStoreKey+'_updated',String(Date.now()));window.__ctCloudSaveCollections();}
+async function commitOptionsTrade(operations,nextPositions,nextClosed){const api=window.__CT_CLOUD__?.api;if(!api?.operateOptionsPortfolio)throw new Error('Серверний Options API недоступний.');const result=await api.operateOptionsPortfolio(operations,optionCashLedger.revision||0,nextPositions,nextClosed);optionCashLedger=result.ledger;optionPositions=nextPositions;optionClosed=nextClosed;localStorage.setItem(optionsStoreKey,JSON.stringify(optionPositions));localStorage.setItem(optionsStoreKey+'_closed',JSON.stringify(optionClosed));localStorage.setItem(optionsStoreKey+'_updated',String(Date.now()));if(window.__CT_CLOUD__)window.__CT_CLOUD__.collectionsRevision=result.collectionsRevision;return result;}
+function optionCashCurrency(p){return p.priceCurrency==='base'?p.base:(p.settle||p.quoteCurrency||'USD');}
 function optionFx(pos){if(pos.priceCurrency==='base'){const px=prices[pos.base]?.price||pos.spotAtEntry||0;return px>0?px:0;}return 1;}
 function optionEntryFx(pos){return pos.priceCurrency==='base'?(+pos.spotAtEntry||0):1;}
 function optionPositionPnl(pos){const fx=optionFx(pos),entryFx=optionEntryFx(pos);if(!(fx>0)||!(entryFx>0)||!(pos.markPrice!==null&&pos.markPrice!==undefined&&Number.isFinite(+pos.markPrice)))return null;const sign=pos.side==='buy'?1:-1;return sign*pos.multiplier*pos.openQty*(pos.markPrice*fx-pos.entryPremium*entryFx)-(+pos.openFeeRemaining||0)*entryFx;}
 function optionSummary(){let value=0,unrealized=0,realized=optionClosed.reduce((a,x)=>a+(+x.realizedUSD||0),0),basis=0,pricedBasis=0;let count=0;for(const p of optionPositions){if(p.openQty<=0)continue;count++;const fx=optionFx(p),entryFx=optionEntryFx(p),hasMark=p.markPrice!==null&&p.markPrice!==undefined&&Number.isFinite(+p.markPrice);if(fx>0&&hasMark)value+=p.markPrice*p.multiplier*p.openQty*fx;const pnl=optionPositionPnl(p);if(pnl!==null){unrealized+=pnl;pricedBasis+=(p.entryPremium*p.multiplier*p.openQty+(+p.openFeeRemaining||0))*entryFx;}basis+=(p.entryPremium*p.multiplier*p.openQty+(+p.openFeeRemaining||0))*entryFx;}return {count,value,unrealized,realized,total:unrealized+realized,basis,roi:pricedBasis?unrealized/pricedBasis*100:null};}
-function renderOptionsPortfolio(){const z=optionSummary();$('opCount').textContent=z.count;$('opValue').textContent=money(z.value);for(const [id,v] of [['opUnrealized',z.unrealized],['opRealized',z.realized],['opTotal',z.total]]){$(id).textContent=(v>=0?'+':'')+money(v);$(id).className=v>=0?'positive':'negative';}$('opRoi').textContent=z.roi===null?'—':fmt(z.roi,2)+'%';const f=$('opFilter').value||'all';const strategies=[...new Set(optionPositions.map(p=>p.strategyName||p.strategyId||'Окремі позиції'))],contracts=[...new Set(optionPositions.map(p=>p.symbol||p.base+' '+p.type.toUpperCase()+' '+p.strike))];$('opFilter').innerHTML='<option value="all">Усі позиції</option><optgroup label="За стратегією">'+strategies.map(k=>`<option value="strategy:${escapeHtml(k)}">${escapeHtml(k)}</option>`).join('')+'</optgroup><optgroup label="За контрактом">'+contracts.map(k=>`<option value="contract:${escapeHtml(k)}">${escapeHtml(k)}</option>`).join('')+'</optgroup>';$('opFilter').value=(f==='all'||strategies.some(k=>f==='strategy:'+k)||contracts.some(k=>f==='contract:'+k))?f:'all';const filter=$('opFilter').value;const rows=optionPositions.filter(p=>{if(p.openQty<=0)return false;if(filter==='all')return true;if(filter.startsWith('strategy:'))return filter.slice(9)===(p.strategyName||p.strategyId||'Окремі позиції');if(filter.startsWith('contract:'))return filter.slice(9)===(p.symbol||p.base+' '+p.type.toUpperCase()+' '+p.strike);return true;});$('opRows').innerHTML=rows.length?rows.map(p=>{const pnl=optionPositionPnl(p),fx=optionFx(p),basis=p.entryPremium*p.multiplier*p.openQty*optionEntryFx(p),roi=pnl===null||!basis?null:pnl/basis*100;return `<tr><td>${escapeHtml(p.symbol||p.base+' '+p.type.toUpperCase()+' '+p.strike)}<small>${escapeHtml(p.strategyName||'Окрема позиція')}</small></td><td>${escapeHtml(String(p.exchange||'manual').toUpperCase())}</td><td>${p.side.toUpperCase()} ${p.type.toUpperCase()}</td><td class="num">${fmt(p.openQty,4)}</td><td class="num">${fmt(p.strike,2)}</td><td>${fmtDate(p.expiry)}</td><td class="num">${fmt(p.entryPremium,6)} ${escapeHtml(p.priceCurrency==='base'?p.base:(p.settle||'USD'))}</td><td class="num">${p.markPrice!==null&&p.markPrice!==undefined&&Number.isFinite(+p.markPrice)?fmt(p.markPrice,6):'—'}</td><td class="num ${pnl===null?'muted':pnl>=0?'positive':'negative'}">${pnl===null?'—':(pnl>=0?'+':'')+money(pnl)}</td><td class="num">${roi===null?'—':fmt(roi,2)+'%'}</td><td><button class="smallbtn" data-edit-option="${escapeHtml(p.id)}">Редагувати</button> <button class="smallbtn" data-close="${escapeHtml(p.id)}">Закрити</button></td></tr>`}).join(''):'<tr><td colspan="11" class="empty">Немає відкритих позицій для цього фільтра</td></tr>';$('opUpdated').textContent=optionLastUpdate?'Останнє успішне оновлення: '+new Date(optionLastUpdate).toLocaleString('uk-UA'):'Mark Price ще не оновлювалась';$('opClosedRows').innerHTML=optionClosed.length?[...optionClosed].sort((a,b)=>b.ts-a.ts).map(x=>`<tr><td>${new Date(x.ts).toLocaleString('uk-UA')}</td><td>${escapeHtml(x.symbol||x.strategyName||'Option')}</td><td>${escapeHtml(String(x.exchange||'manual').toUpperCase())}</td><td class="num">${fmt(x.qty,4)}</td><td class="num">${fmt(x.entryPremium,6)}</td><td class="num">${fmt(x.closePremium,6)}</td><td class="num">${fmt(x.fee,6)}</td><td class="num ${x.realizedUSD>=0?'positive':'negative'}">${(x.realizedUSD>=0?'+':'')+money(x.realizedUSD)}</td></tr>`).join(''):'<tr><td colspan="8" class="empty">Закритих позицій поки немає</td></tr>';document.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>closeOptionPosition(b.dataset.close));document.querySelectorAll('[data-edit-option]').forEach(b=>b.onclick=()=>editOptionPosition(b.dataset.editOption));}
+function renderOptionsPortfolio(){const cashBox=$('opCashBalances');if(cashBox)cashBox.innerHTML=Object.entries(optionCashLedger.wallets||{}).filter(([,v])=>Math.abs(+v)>1e-10).sort(([a],[b])=>a.localeCompare(b)).map(([c,v])=>`<span class="tag">${escapeHtml(c)}: ${fmt(v,8)}</span>`).join('')||'<span class="muted">Баланс порожній</span>';$('opCount').textContent=optionSummary().count;const z=optionSummary();$('opValue').textContent=money(z.value);for(const [id,v] of [['opUnrealized',z.unrealized],['opRealized',z.realized],['opTotal',z.total]]){$(id).textContent=(v>=0?'+':'')+money(v);$(id).className=v>=0?'positive':'negative';}$('opRoi').textContent=z.roi===null?'—':fmt(z.roi,2)+'%';const f=$('opFilter').value||'all';const strategies=[...new Set(optionPositions.map(p=>p.strategyName||p.strategyId||'Окремі позиції'))],contracts=[...new Set(optionPositions.map(p=>p.symbol||p.base+' '+p.type.toUpperCase()+' '+p.strike))];$('opFilter').innerHTML='<option value="all">Усі позиції</option><optgroup label="За стратегією">'+strategies.map(k=>`<option value="strategy:${escapeHtml(k)}">${escapeHtml(k)}</option>`).join('')+'</optgroup><optgroup label="За контрактом">'+contracts.map(k=>`<option value="contract:${escapeHtml(k)}">${escapeHtml(k)}</option>`).join('')+'</optgroup>';$('opFilter').value=(f==='all'||strategies.some(k=>f==='strategy:'+k)||contracts.some(k=>f==='contract:'+k))?f:'all';const filter=$('opFilter').value;const rows=optionPositions.filter(p=>{if(p.openQty<=0)return false;if(filter==='all')return true;if(filter.startsWith('strategy:'))return filter.slice(9)===(p.strategyName||p.strategyId||'Окремі позиції');if(filter.startsWith('contract:'))return filter.slice(9)===(p.symbol||p.base+' '+p.type.toUpperCase()+' '+p.strike);return true;});$('opRows').innerHTML=rows.length?rows.map(p=>{const pnl=optionPositionPnl(p),fx=optionFx(p),basis=p.entryPremium*p.multiplier*p.openQty*optionEntryFx(p),roi=pnl===null||!basis?null:pnl/basis*100;return `<tr><td>${escapeHtml(p.symbol||p.base+' '+p.type.toUpperCase()+' '+p.strike)}<small>${escapeHtml(p.strategyName||'Окрема позиція')}</small></td><td>${escapeHtml(String(p.exchange||'manual').toUpperCase())}</td><td>${p.side.toUpperCase()} ${p.type.toUpperCase()}</td><td class="num">${fmt(p.openQty,4)}</td><td class="num">${fmt(p.strike,2)}</td><td>${fmtDate(p.expiry)}</td><td class="num">${fmt(p.entryPremium,6)} ${escapeHtml(p.priceCurrency==='base'?p.base:(p.settle||'USD'))}</td><td class="num">${p.markPrice!==null&&p.markPrice!==undefined&&Number.isFinite(+p.markPrice)?fmt(p.markPrice,6):'—'}</td><td class="num ${pnl===null?'muted':pnl>=0?'positive':'negative'}">${pnl===null?'—':(pnl>=0?'+':'')+money(pnl)}</td><td class="num">${roi===null?'—':fmt(roi,2)+'%'}</td><td><button class="smallbtn" data-edit-option="${escapeHtml(p.id)}">Редагувати</button> <button class="smallbtn" data-close="${escapeHtml(p.id)}">Закрити</button></td></tr>`}).join(''):'<tr><td colspan="11" class="empty">Немає відкритих позицій для цього фільтра</td></tr>';$('opUpdated').textContent=optionLastUpdate?'Останнє успішне оновлення: '+new Date(optionLastUpdate).toLocaleString('uk-UA'):'Марк-ціна ще не оновлювалася';$('opClosedRows').innerHTML=optionClosed.length?[...optionClosed].sort((a,b)=>b.ts-a.ts).map(x=>`<tr><td>${new Date(x.ts).toLocaleString('uk-UA')}</td><td>${escapeHtml(x.symbol||x.strategyName||'Option')}</td><td>${escapeHtml(String(x.exchange||'manual').toUpperCase())}</td><td class="num">${fmt(x.qty,4)}</td><td class="num">${fmt(x.entryPremium,6)}</td><td class="num">${fmt(x.closePremium,6)}</td><td class="num">${fmt(x.fee,6)}</td><td class="num ${x.realizedUSD>=0?'positive':'negative'}">${(x.realizedUSD>=0?'+':'')+money(x.realizedUSD)}</td></tr>`).join(''):'<tr><td colspan="8" class="empty">Закритих позицій поки немає</td></tr>';document.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>closeOptionPosition(b.dataset.close));document.querySelectorAll('[data-edit-option]').forEach(b=>b.onclick=()=>editOptionPosition(b.dataset.editOption));}
 $('opFilter').onchange=renderOptionsPortfolio;
 $('closedDateFrom').onchange=e=>{closedDateFilter.from=e.target.value;renderOptionsPortfolio()};$('closedDateTo').onchange=e=>{closedDateFilter.to=e.target.value;renderOptionsPortfolio()};$('closedDateClear').onclick=()=>{closedDateFilter={from:'',to:''};$('closedDateFrom').value=$('closedDateTo').value='';renderOptionsPortfolio()};
 
-function editOptionPosition(id){const p=optionPositions.find(x=>x.id===id);if(!p)return;
+function editOptionPosition(id){const p=optionPositions.find(x=>x.id===id);if(!p)return;if(p.cashManaged===true)return alert('Цю позицію не можна редагувати вручну: її рухи коштів уже проведені через гаманець. Закрий позицію та створи нову.');
  const ask=(label,key,def,min=0)=>{const v=prompt(label,String(p[key]??def));if(v===null)return null;const n=Number(v);return Number.isFinite(n)&&n>=min?n:NaN;};
  const qty=ask('Відкрита кількість контрактів','openQty',p.openQty,0);if(qty===null)return;if(!Number.isFinite(qty))return alert('Некоректна кількість.');
  const entry=ask('Премія входу за контракт','entryPremium',p.entryPremium,0);if(entry===null)return;if(!Number.isFinite(entry))return alert('Некоректна премія.');
@@ -813,11 +1002,12 @@ function editOptionPosition(id){const p=optionPositions.find(x=>x.id===id);if(!p
  p.openQty=qty;p.entryPremium=entry;p.strike=strike;p.iv=iv;p.openFeeRemaining=fee;p.expiry=expiry;p.base=base.trim().toUpperCase();p.side=side.trim().toLowerCase();p.type=type.trim().toLowerCase();if(qty===0)p.openQty=0;saveOptions();renderOptionsPortfolio();renderPortfolio();
 }
 
-function closeOptionPosition(id){const p=optionPositions.find(x=>x.id===id);if(!p)return;const qty=Number(prompt('Кількість контрактів для закриття (макс. '+p.openQty+')',String(p.openQty)));if(!Number.isFinite(qty)||qty<=0||qty>p.openQty)return alert('Некоректна кількість.');const price=Number(prompt('Ціна закриття в '+(p.priceCurrency==='base'?p.base:(p.settle||'USD')),p.markPrice!==null&&p.markPrice!==undefined&&Number.isFinite(+p.markPrice)?String(p.markPrice):''));if(!Number.isFinite(price)||price<0)return alert('Некоректна ціна закриття.');const fee=Number(prompt('Комісія у валюті розрахунку', '0'));if(!Number.isFinite(fee)||fee<0)return alert('Некоректна комісія.');const closeDate=prompt('Дата операції (YYYY-MM-DD)',new Date().toISOString().slice(0,10));if(!/^\d{4}-\d{2}-\d{2}$/.test(closeDate||''))return alert('Некоректна дата операції.');const fx=p.priceCurrency==='base'?(prices[p.base]?.price||p.spotAtEntry||0):1;if(!(fx>0))return alert('Немає курсу для конвертації в USD.');const entryFx=optionEntryFx(p),openFeePart=(+p.openFeeRemaining||0)*qty/p.openQty,sign=p.side==='buy'?1:-1,realized=sign*p.multiplier*qty*(price*fx-p.entryPremium*entryFx)-openFeePart*entryFx-fee*fx;const close={id:'oc_'+Date.now()+'_'+Math.random().toString(36).slice(2,7),positionId:p.id,strategyId:p.strategyId,strategyName:p.strategyName,symbol:p.symbol,exchange:p.exchange,priceCurrency:p.priceCurrency,base:p.base,settle:p.settle,qty,entryPremium:p.entryPremium,closePremium:price,fee,openFeeAllocated:openFeePart,realizedUSD:realized,fx,ts:new Date(closeDate+'T12:00:00').getTime()};optionClosed.push(close);p.openQty-=qty;p.openFeeRemaining=Math.max(0,(p.openFeeRemaining||0)-openFeePart);if(p.openQty<=1e-10)p.openQty=0;saveOptions();renderOptionsPortfolio();renderPortfolio();}
+async function closeOptionPosition(id){const p=optionPositions.find(x=>x.id===id);if(!p)return;const qty=Number(prompt('Кількість контрактів для закриття (макс. '+p.openQty+')',String(p.openQty)));if(!Number.isFinite(qty)||qty<=0||qty>p.openQty)return alert('Некоректна кількість.');const price=Number(prompt('Ціна закриття в '+(p.priceCurrency==='base'?p.base:(p.settle||'USD')),p.markPrice!==null&&p.markPrice!==undefined&&Number.isFinite(+p.markPrice)?String(p.markPrice):''));if(!Number.isFinite(price)||price<0)return alert('Некоректна ціна закриття.');const fee=Number(prompt('Комісія у валюті розрахунку', '0'));if(!Number.isFinite(fee)||fee<0)return alert('Некоректна комісія.');const closeDate=prompt('Дата операції (YYYY-MM-DD)',new Date().toISOString().slice(0,10));if(!/^\d{4}-\d{2}-\d{2}$/.test(closeDate||''))return alert('Некоректна дата операції.');const fx=p.priceCurrency==='base'?(prices[p.base]?.price||p.spotAtEntry||0):1;if(!(fx>0))return alert('Немає курсу для конвертації в USD.');const entryFx=optionEntryFx(p),openFeePart=(+p.openFeeRemaining||0)*qty/p.openQty,sign=p.side==='buy'?1:-1,realized=sign*p.multiplier*qty*(price*fx-p.entryPremium*entryFx)-openFeePart*entryFx-fee*fx;const close={id:'oc_'+Date.now()+'_'+Math.random().toString(36).slice(2,7),positionId:p.id,strategyId:p.strategyId,strategyName:p.strategyName,symbol:p.symbol,exchange:p.exchange,priceCurrency:p.priceCurrency,base:p.base,settle:p.settle,qty,entryPremium:p.entryPremium,closePremium:price,fee,openFeeAllocated:openFeePart,realizedUSD:realized,fx,ts:new Date(closeDate+'T12:00:00').getTime()};const nextPositions=JSON.parse(JSON.stringify(optionPositions)),nextClosed=JSON.parse(JSON.stringify(optionClosed));const target=nextPositions.find(x=>x.id===id);target.openQty-=qty;target.openFeeRemaining=Math.max(0,(target.openFeeRemaining||0)-openFeePart);if(target.openQty<=1e-10)target.openQty=0;nextClosed.push(close);try{await commitOptionsTrade([{type:'close',idempotencyKey:'ct_close_'+close.id,currency:optionCashCurrency(p),side:p.side,qty,premium:price,multiplier:p.multiplier,fee,positionId:p.id,legacy:p.cashManaged!==true}],nextPositions,nextClosed);}catch(e){if(e.status===409){try{const latest=await window.__CT_CLOUD__.api.getOptionsCash();optionCashLedger=latest.ledger;}catch{}}return alert('Не вдалося закрити позицію: '+e.message);}renderOptionsPortfolio();renderPortfolio();}
 async function refreshOptionMarks(){let ok=0,fail=0;for(const p of optionPositions.filter(x=>x.openQty>0&&x.symbol&&x.exchange!=='manual')){try{let t;if(p.exchange==='bybit'){const j=await apiJson('https://api.bybit.com/v5/market/tickers?category=option&symbol='+encodeURIComponent(p.symbol));t=(j.list||[])[0];}else if(p.exchange==='deribit'){const j=await apiJson('https://www.deribit.com/api/v2/public/ticker?instrument_name='+encodeURIComponent(p.symbol));t=j;}if(!t)throw new Error('Ticker unavailable');const mark=num(t.markPrice??t.mark_price,NaN);if(Number.isFinite(mark)&&mark>=0){p.markPrice=mark;p.markIv=num(t.markIv??t.mark_iv,p.iv);p.markUpdated=Date.now();ok++;}else fail++;}catch(e){fail++;console.warn('Option mark update failed',p.symbol,e.message);}}if(ok){optionLastUpdate=Date.now();localStorage.setItem(optionsStoreKey+'_updated',String(optionLastUpdate));saveOptions();}renderOptionsPortfolio();return {ok,fail};}
 function validateStrategyForTransfer(){if(!strategyLegs.length)return 'Стратегія порожня.';for(let i=0;i<strategyLegs.length;i++){const l=strategyLegs[i];if(!['buy','sell'].includes(l.side)||!['call','put'].includes(l.type)||!(l.strike>0)||!l.expiry||!(l.qty>0)||!(l.premium>=0)||!(l.multiplier>0)||!(l.iv>=0)||num(l.entryFee)<0)return 'Перевір обов’язкові параметри Leg №'+(i+1)+'.';}return '';}
 let lastTransferredSignature='';
-$('buyOptionStrategy').onclick=()=>{const signature=JSON.stringify(strategyLegs);if(signature===lastTransferredSignature)return alert('Ця версія стратегії вже перенесена. Зміни Legs, щоб створити нову позицію.');const err=validateStrategyForTransfer();if(err)return alert(err);const rawName=$('strategyName').value.trim();const name=rawName&&rawName.toLowerCase()!=='custom strategy'?rawName:'';const preview=strategyLegs.map((l,i)=>`${i+1}. ${l.side.toUpperCase()} ${l.type.toUpperCase()} ${l.symbol||l.strike+' / '+l.expiry} × ${l.qty} @ ${l.premium} (entry fee ${num(l.entryFee)})`).join('\n');if(!confirm('Перенести Legs у внутрішній Портфель Опціонів?\n\n'+preview+'\n\nЦе НЕ розміщує біржові ордери.'))return;const sid='str_'+Date.now()+'_'+Math.random().toString(36).slice(2,7),spot=num($('builderSpot').value);const added=strategyLegs.map(l=>({id:'op_'+Date.now()+'_'+Math.random().toString(36).slice(2,8),strategyId:sid,strategyName:name,exchange:l.source||'manual',symbol:l.symbol||'',base:$('optCurrency').value.trim().toUpperCase()||'BTC',side:l.side,type:l.type,strike:+l.strike,expiry:l.expiry,openQty:+l.qty,entryPremium:+l.premium,markPrice:Number.isFinite(+l.markPrice)&&l.markPrice!==null?+l.markPrice:null,iv:+l.iv,multiplier:+l.multiplier,priceCurrency:l.priceCurrency||'quote',settle:l.settle||'USD',quoteCurrency:l.quoteCurrency||l.settle||'USD',spotAtEntry:spot,openedAt:Date.now(),openFeeRemaining:num(l.entryFee),openFeeCurrency:l.priceCurrency==='base'?l.base:(l.settle||'USD')}));optionPositions.push(...added);lastTransferredSignature=signature;saveOptions();renderOptionsPortfolio();renderPortfolio();alert('Контракти перенесено у Портфель Опціонів. Ціна входу зафіксована.');};
+$('buyOptionStrategy').onclick=async()=>{const signature=JSON.stringify(strategyLegs);if(signature===lastTransferredSignature)return alert('Ця версія стратегії вже перенесена. Зміни Legs, щоб створити нову позицію.');const err=validateStrategyForTransfer();if(err)return alert(err);const rawName=$('strategyName').value.trim();const name=rawName&&rawName.toLowerCase()!=='custom strategy'?rawName:'';const preview=strategyLegs.map((l,i)=>`${i+1}. ${l.side.toUpperCase()} ${l.type.toUpperCase()} ${l.symbol||l.strike+' / '+l.expiry} × ${l.qty} @ ${l.premium} (entry fee ${num(l.entryFee)})`).join('\n');if(!confirm('Перенести Legs у внутрішній Портфель Опціонів?\n\n'+preview+'\n\nЦе НЕ розміщує біржові ордери. Грошові рухи будуть проведені з Options-гаманця.'))return;const sid='str_'+Date.now()+'_'+Math.random().toString(36).slice(2,7),spot=num($('builderSpot').value);const added=strategyLegs.map(l=>({id:'op_'+Date.now()+'_'+Math.random().toString(36).slice(2,8),strategyId:sid,strategyName:name,exchange:l.source||'manual',symbol:l.symbol||'',base:$('optCurrency').value.trim().toUpperCase()||'BTC',side:l.side,type:l.type,strike:+l.strike,expiry:l.expiry,openQty:+l.qty,entryPremium:+l.premium,markPrice:Number.isFinite(+l.markPrice)&&l.markPrice!==null?+l.markPrice:null,iv:+l.iv,multiplier:+l.multiplier,priceCurrency:l.priceCurrency||'quote',settle:l.settle||'USD',quoteCurrency:l.quoteCurrency||l.settle||'USD',spotAtEntry:spot,openedAt:Date.now(),openFeeRemaining:num(l.entryFee),openFeeCurrency:l.priceCurrency==='base'?($('optCurrency').value.trim().toUpperCase()||'BTC'):(l.settle||'USD'),cashManaged:true}));const operations=added.map(p=>({type:'open',idempotencyKey:'ct_open_'+p.id,currency:optionCashCurrency(p),side:p.side,qty:p.openQty,premium:p.entryPremium,multiplier:p.multiplier,fee:p.openFeeRemaining,positionId:p.id}));const nextPositions=[...optionPositions,...added];try{await commitOptionsTrade(operations,nextPositions,optionClosed);lastTransferredSignature=signature;renderOptionsPortfolio();renderPortfolio();alert('Контракти перенесено у Портфель Опціонів. Гаманець і позиції оновлено атомарно.');}catch(e){if(e.status===409){try{const latest=await window.__CT_CLOUD__.api.getOptionsCash();optionCashLedger=latest.ledger;}catch{}}alert('Не вдалося відкрити стратегію: '+e.message+'\nЖодна нога не повинна була бути збережена.');}};
+
 
 // ---------- Options strategy engine ----------
 let optionInstruments=[], selectedTicker=null, strategyLegs=[];
@@ -837,7 +1027,7 @@ async function loadInstrumentList(){const source=$('optSource').value,base=$('op
 function findSelectedInstrument(){const sym=$('optStrike').value;return optionInstruments.find(x=>(x.symbol||x.instrument_name)===sym);}
 function normalizeIv(v,source){const n=num(v);return source==='bybit'&&n>0&&n<5?n*100:n;}
 async function loadSelectedTicker(){const x=findSelectedInstrument();if(!x)return null;const source=$('optSource').value;let t;if(source==='bybit'){const j=await apiJson('https://api.bybit.com/v5/market/tickers?category=option&symbol='+encodeURIComponent(x.symbol));t=(j.list||[])[0];if(!t)throw new Error('Тикер не знайдено');}else{const j=await apiJson('https://www.deribit.com/api/v2/public/ticker?instrument_name='+encodeURIComponent(x.instrument_name));t=j;}return {instrument:x,ticker:t};}
-$('loadOptions').onclick=async()=>{try{$('optionStatus').textContent='Завантажую котирування…';const r=await loadSelectedTicker();if(!r)return;selectedTicker=r;const {instrument:x,ticker:t}=r;const g=t.greeks||t;const mark=num(t.markPrice??t.mark_price),iv=normalizeIv(t.markIv??t.mark_iv,x._source||$('optSource').value),delta=num(g.delta),gamma=num(g.gamma),theta=num(g.theta),vega=num(g.vega);const vals=[['Mark Price',fmt(mark,6)+' '+(x._settle||$('optCurrency').value)],['Mark IV',fmt(iv,2)+'%'],['Delta',fmt(delta,4)],['Bid / Ask',fmt(num(t.bid1Price??t.best_bid_price),6)+' / '+fmt(num(t.ask1Price??t.best_ask_price),6)],['Open Interest',fmt(num(t.openInterest??t.open_interest),2)],['Gamma / Theta / Vega',[gamma,theta,vega].map(v=>fmt(v,5)).join(' / ')]];$('optionMetrics').innerHTML=vals.map(([a,b])=>`<div class="metric"><span>${a}</span><b>${b}</b></div>`).join('');const spot=num(t.underlyingPrice??t.underlying_price??t.indexPrice??t.index_price);if(spot>0){$('builderSpot').value=spot;if(chartRangeAuto){setAutoChartRange();}$('scenarioPrice').value=spot;$('scenarioPriceManual').value=spot;$('scenarioPrice').max=String(Math.max(200000,spot*2));calculateStrategy();}$('optionStatus').textContent=(x.symbol||x.instrument_name)+' · '+new Date().toLocaleTimeString('uk-UA');}catch(e){$('optionStatus').textContent='Помилка котирування: '+e.message;}};
+$('loadOptions').onclick=async()=>{try{$('optionStatus').textContent='Завантажую котирування…';const r=await loadSelectedTicker();if(!r)return;selectedTicker=r;const {instrument:x,ticker:t}=r;const g=t.greeks||t;const mark=num(t.markPrice??t.mark_price),iv=normalizeIv(t.markIv??t.mark_iv,x._source||$('optSource').value),delta=num(g.delta),gamma=num(g.gamma),theta=num(g.theta),vega=num(g.vega);const vals=[['Марк-ціна',fmt(mark,6)+' '+(x._settle||$('optCurrency').value)],['IV за Mark',fmt(iv,2)+'%'],['Delta',fmt(delta,4)],['Bid / Ask',fmt(num(t.bid1Price??t.best_bid_price),6)+' / '+fmt(num(t.ask1Price??t.best_ask_price),6)],['Відкритий інтерес',fmt(num(t.openInterest??t.open_interest),2)],['Gamma / Theta / Vega',[gamma,theta,vega].map(v=>fmt(v,5)).join(' / ')]];$('optionMetrics').innerHTML=vals.map(([a,b])=>`<div class="metric"><span>${a}</span><b>${b}</b></div>`).join('');const spot=num(t.underlyingPrice??t.underlying_price??t.indexPrice??t.index_price);if(spot>0){$('builderSpot').value=spot;if(chartRangeAuto){setAutoChartRange();}$('scenarioPrice').value=spot;$('scenarioPriceManual').value=spot;$('scenarioPrice').max=String(Math.max(200000,spot*2));calculateStrategy();}$('optionStatus').textContent=(x.symbol||x.instrument_name)+' · '+new Date().toLocaleTimeString('uk-UA');}catch(e){$('optionStatus').textContent='Помилка котирування: '+e.message;}};
 $('optSource').onchange=loadInstrumentList;$('optCurrency').onchange=loadInstrumentList;$('optExpiry').onchange=updateOptionStrikes;$('optType').onchange=updateOptionStrikes;
 async function legFromMarket(){const x=findSelectedInstrument();if(!x)return alert('Спочатку завантаж ланцюжок і вибери контракт.');try{let t=selectedTicker?.instrument===x?selectedTicker.ticker:null;if(!t){const r=await loadSelectedTicker();t=r?.ticker||null;}const premium=num(t?.markPrice??t?.mark_price),iv=normalizeIv(t?.markIv??t?.mark_iv,x._source),base=$('optCurrency').value.toUpperCase();const qtyStep=num(x._qtyStep,1);const settle=x._settle||base;const spot=num(t?.underlyingPrice??t?.underlying_price);if(spot>0){$('builderSpot').value=spot;if(chartRangeAuto){setAutoChartRange();}$('scenarioPrice').value=spot;$('scenarioPriceManual').value=spot;$('scenarioPrice').max=String(Math.max(200000,spot*2));}strategyLegs.push({id:'leg_'+Date.now()+Math.random(),side:'buy',type:x._type,strike:x._strike,expiry:x._expiry,qty:qtyStep>0?qtyStep:1,premium,iv:iv||60,multiplier:num(x._multiplier,1),entryFee:0,source:x._source,symbol:x.symbol||x.instrument_name,settle,quoteCurrency:x._quote||settle,priceCurrency:x._priceCurrency||(x._source==='deribit'?'base':'quote')});renderLegs();calculateStrategy();}catch(e){$('optionStatus').textContent='Не вдалося додати контракт: '+e.message;}}
 $('addMarketLeg').onclick=legFromMarket;
@@ -863,18 +1053,18 @@ function legValueUSD(l,S,valuationDate,ivShift,mode){const expiry=new Date(l.exp
 function calcGreeks(S,days,ivShift){let delta=0,gamma=0,theta=0,vega=0,rho=0;const valDate=new Date();valDate.setDate(valDate.getDate()+days);for(const l of strategyLegs){const exp=new Date(l.expiry+'T23:59:59Z'),T=Math.max(0,(exp-valDate)/(365.25*86400000)),sig=Math.max(.0001,(num(l.iv,60)+ivShift)/100),r=num($('riskFree').value)/100,sign=(l.side==='buy'?1:-1)*l.qty*l.multiplier;if(T<=0||S<=0)continue;const v=sig*Math.sqrt(T),d1=(Math.log(S/l.strike)+(r+.5*sig*sig)*T)/v,d2=d1-v,phi=Math.exp(-d1*d1/2)/Math.sqrt(2*Math.PI),nd1=normCdf(d1),nd2=normCdf(d2);const isCall=l.type==='call';delta+=sign*(isCall?nd1:nd1-1);gamma+=sign*phi/(S*v);theta+=sign*(-S*phi*sig/(2*Math.sqrt(T))+(isCall?-r*l.strike*Math.exp(-r*T)*nd2:r*l.strike*Math.exp(-r*T)*normCdf(-d2)))/365.25;vega+=sign*S*phi*Math.sqrt(T)/100;rho+=sign*(isCall?l.strike*T*Math.exp(-r*T)*nd2:-l.strike*T*Math.exp(-r*T)*normCdf(-d2))/100;}return {delta,gamma,theta,vega,rho};}
 function calcAt(S,days,mode,ivShift){const valuation=new Date();valuation.setDate(valuation.getDate()+days);const date=valuation.toISOString().slice(0,10);let pnl=0,delta=0,gamma=0,netPremium=0;const spot0=num($('builderSpot').value,S);for(const l of strategyLegs){const z=legValueUSD(l,S,date,ivShift,mode);pnl+=z.pnl;const sign=(l.side==='buy'?1:-1)*l.qty*l.multiplier;netPremium+=sign*num(l.premium)*(l.priceCurrency==='base'?spot0:1);if(z.T>0){const sig=z.iv,T=z.T,v=sig*Math.sqrt(T),d1=(Math.log(S/l.strike)+(num($('riskFree').value)/100+.5*sig*sig)*T)/v,phi=Math.exp(-d1*d1/2)/Math.sqrt(2*Math.PI);delta+=sign*(l.type==='call'?normCdf(d1):normCdf(d1)-1);gamma+=sign*phi/(S*v);}}return {pnl,delta,gamma,netPremium,date};}
 function estimateProbabilityOfProfit(){if(!strategyLegs.length)return '—';const expiries=[...new Set(strategyLegs.map(l=>l.expiry))];if(expiries.length!==1)return 'Недоступно: різні експірації';const expiry=expiries[0],days=Math.max(0,Math.ceil((new Date(expiry+'T23:59:59Z')-new Date())/86400000)),spot=num($('builderSpot').value);if(!(spot>0)||days<=0)return '—';const weights=strategyLegs.reduce((a,l)=>a+l.qty*l.multiplier,0)||1,iv=strategyLegs.reduce((a,l)=>a+(l.iv/100)*l.qty*l.multiplier,0)/weights,r=num($('riskFree').value)/100,T=days/365.25,sigma=Math.max(.0001,iv),n=1200;let profit=0,total=0;for(let i=0;i<n;i++){const z=-4+(8*(i+.5)/n),w=Math.exp(-z*z/2),S=spot*Math.exp((r-.5*sigma*sigma)*T+sigma*Math.sqrt(T)*z),pnl=calcAt(S,days,'expiry',0).pnl;total+=w;if(pnl>0)profit+=w;}return total?fmt(profit/total*100,1)+'% (модельна)':'—';}
-function renderScenarioTable(){const body=$('scenarioRows');if(!body)return;if(!strategyLegs.length){body.innerHTML='<tr><td colspan="5" class="empty">Додай Legs для сценарного аналізу</td></tr>';return;}const spot=num($('scenarioPrice').value,num($('builderSpot').value)),days=num($('scenarioDays').value),mode=$('calcMode').value,shift=num($('scenarioIvShift').value);body.innerHTML=[-.2,-.1,0,.1,.2].map(ch=>{const S=Math.max(0,spot*(1+ch)),r=calcAt(S,days,mode,shift),g=calcGreeks(S,days,shift);return `<tr><td>${ch>0?'+':''}${fmt(ch*100,0)}%</td><td class="num">${money(S)}</td><td class="num ${r.pnl>=0?'positive':'negative'}">${(r.pnl>=0?'+':'')+money(r.pnl)}</td><td class="num">${fmt(g.delta,4)}</td><td class="num">${fmt(g.gamma,7)}</td></tr>`}).join('');}
-function calculateStrategy(){if(!strategyLegs.length){$('strategyMetrics').innerHTML='<div class="metric"><span>Стратегія</span><b>Додай Legs</b></div>';renderScenarioTable();drawPayoff();return;}const mode=$('calcMode').value,S=num($('scenarioPrice').value,num($('builderSpot').value,90000)),days=num($('scenarioDays').value),ivShift=num($('scenarioIvShift').value),res=calcAt(S,days,mode,ivShift);const display=$('chartDisplay').value;const greeks=calcGreeks(S,days,ivShift);const vals=[['Net Premium', (res.netPremium>=0?'+':'')+money(res.netPremium)],['P/L за сценарієм',(res.pnl>=0?'+':'')+money(res.pnl)],['Break-even',estimateBreakevens(mode)],['Макс. прибуток',estimateExtremes().max],['Макс. збиток',estimateExtremes().min],['Net Delta / Gamma',fmt(greeks.delta,4)+' / '+fmt(greeks.gamma,6)],['Net Theta / Vega',fmt(greeks.theta,4)+' / '+fmt(greeks.vega,4)],['Net Rho',fmt(greeks.rho,4)],['Probability of Profit',estimateProbabilityOfProfit()]];$('strategyMetrics').innerHTML=vals.map(([a,b])=>`<div class="metric"><span>${a}</span><b>${b}</b></div>`).join('');$('scenarioPriceLabel').textContent=money(S);$('scenarioPriceManual').value=S;$('scenarioDaysLabel').textContent=days===0?'Сьогодні':'+'+days+' дн.';$('scenarioIvLabel').textContent=(ivShift>=0?'+':'')+ivShift+' п.п.';$('scenarioDate').value=res.date;$('calcNotice').textContent=mode==='expiry'?'Payoff за внутрішньою вартістю на експірацію. Для стратегій із різними датами експірації використовуй теоретичний режим: простий Expiration Payoff не моделює реінвестування/зміну ціни після проміжного settlement.':'Теоретичний P/L за Black–Scholes. Кожен Leg оцінюється з власним строком до експірації та IV. Для простоти використано єдину ставку без дивідендів/конвенцій carry; комісії та прослизання не включені.';renderScenarioTable();drawPayoff();}
+function renderScenarioTable(){const body=$('scenarioRows');if(!body)return;if(!strategyLegs.length){body.innerHTML='<tr><td colspan="5" class="empty">Додай ноги стратегії для сценарного аналізу</td></tr>';return;}const spot=num($('scenarioPrice').value,num($('builderSpot').value)),days=num($('scenarioDays').value),mode=$('calcMode').value,shift=num($('scenarioIvShift').value);body.innerHTML=[-.2,-.1,0,.1,.2].map(ch=>{const S=Math.max(0,spot*(1+ch)),r=calcAt(S,days,mode,shift),g=calcGreeks(S,days,shift);return `<tr><td>${ch>0?'+':''}${fmt(ch*100,0)}%</td><td class="num">${money(S)}</td><td class="num ${r.pnl>=0?'positive':'negative'}">${(r.pnl>=0?'+':'')+money(r.pnl)}</td><td class="num">${fmt(g.delta,4)}</td><td class="num">${fmt(g.gamma,7)}</td></tr>`}).join('');}
+function calculateStrategy(){if(!strategyLegs.length){$('strategyMetrics').innerHTML='<div class="metric"><span>Стратегія</span><b>Додай Legs</b></div>';renderScenarioTable();drawPayoff();return;}const mode=$('calcMode').value,S=num($('scenarioPrice').value,num($('builderSpot').value,90000)),days=num($('scenarioDays').value),ivShift=num($('scenarioIvShift').value),res=calcAt(S,days,mode,ivShift);const display=$('chartDisplay').value;const greeks=calcGreeks(S,days,ivShift);const vals=[['Чиста премія', (res.netPremium>=0?'+':'')+money(res.netPremium)],['P/L за сценарієм',(res.pnl>=0?'+':'')+money(res.pnl)],['Break-even',estimateBreakevens(mode)],['Макс. прибуток',estimateExtremes().max],['Макс. збиток',estimateExtremes().min],['Сумарна Delta / Gamma',fmt(greeks.delta,4)+' / '+fmt(greeks.gamma,6)],['Сумарна Theta / Vega',fmt(greeks.theta,4)+' / '+fmt(greeks.vega,4)],['Сумарна Rho',fmt(greeks.rho,4)],['Імовірність прибутку',estimateProbabilityOfProfit()]];$('strategyMetrics').innerHTML=vals.map(([a,b])=>`<div class="metric"><span>${a}</span><b>${b}</b></div>`).join('');$('scenarioPriceLabel').textContent=money(S);$('scenarioPriceManual').value=S;$('scenarioDaysLabel').textContent=days===0?'Сьогодні':'+'+days+' дн.';$('scenarioIvLabel').textContent=(ivShift>=0?'+':'')+ivShift+' п.п.';$('scenarioDate').value=res.date;$('calcNotice').textContent=mode==='expiry'?'Payoff за внутрішньою вартістю на експірацію. Для стратегій із різними датами експірації використовуй теоретичний режим: простий Expiration Payoff не моделює реінвестування/зміну ціни після проміжного settlement.':'Теоретичний P/L за Black–Scholes. Кожен Leg оцінюється з власним строком до експірації та IV. Для простоти використано єдину ставку без дивідендів/конвенцій carry; комісії та прослизання не включені.';renderScenarioTable();drawPayoff();}
 function estimateBreakevens(mode){const vals=[];const lo=Math.max(0,num($('rangeMin').value,num($('builderSpot').value)*.3)),hi=num($('rangeMax').value,num($('builderSpot').value)*1.7);let prevX=lo,prev=calcAt(lo,0,mode,0).pnl;for(let i=1;i<=300;i++){const x=lo+(hi-lo)*i/300,y=calcAt(x,0,mode,0).pnl;if(y===0||prev*y<0){const root=prevX+(x-prevX)*Math.abs(prev)/(Math.abs(prev)+Math.abs(y));vals.push(money(root));}prevX=x;prev=y;}return vals.length?vals.join(', '):'Не знайдено в діапазоні';}
 function estimateExtremes(){let min=Infinity,max=-Infinity;const spot=num($('builderSpot').value,90000),callSlope=strategyLegs.filter(l=>l.type==='call').reduce((a,l)=>a+(l.side==='buy'?1:-1)*l.qty*l.multiplier,0);for(let i=0;i<=500;i++){const x=spot*4*i/500,y=calcAt(x,0,'expiry',0).pnl;min=Math.min(min,y);max=Math.max(max,y);}return {max:callSlope>1e-9?'Необмежений':money(max),min:callSlope< -1e-9?'Необмежений':money(min)};}
 function chartMetric(y){if($('chartDisplay').value!=='roi')return y;const base=Math.abs(calcAt(num($('builderSpot').value,90000),0,'expiry',0).netPremium);return base>0?y/base*100:y;}
-function drawPayoff(){const c=$('payoffChart');if(!c)return;const rect=c.getBoundingClientRect(),dpr=window.devicePixelRatio||1;c.width=Math.max(300,rect.width*dpr);c.height=Math.max(220,rect.height*dpr);const ctx=c.getContext('2d');ctx.scale(dpr,dpr);const W=rect.width,H=rect.height;ctx.clearRect(0,0,W,H);ctx.fillStyle='#0b151e';ctx.fillRect(0,0,W,H);if(!strategyLegs.length){ctx.fillStyle='#91a2b2';ctx.fillText('Додай Legs, щоб побудувати графік P/L',20,30);return;}const spot=num($('builderSpot').value,90000),lo=Math.max(0,num($('rangeMin').value,spot*.5)),hi=num($('rangeMax').value,spot*1.5),mode=$('calcMode').value,days=num($('scenarioDays').value),shift=num($('scenarioIvShift').value);const N=180,points=[];let ymin=Infinity,ymax=-Infinity;for(let i=0;i<=N;i++){const x=lo+(hi-lo)*i/N,y=chartMetric(calcAt(x,days,mode,shift).pnl);points.push({x,y});ymin=Math.min(ymin,y);ymax=Math.max(ymax,y);}if(ymin===ymax){ymin-=1;ymax+=1;}const pad={l:65,r:15,t:15,b:35},xpx=x=>pad.l+(x-lo)/(hi-lo)*(W-pad.l-pad.r),ypx=y=>pad.t+(ymax-y)/(ymax-ymin)*(H-pad.t-pad.b);ctx.strokeStyle='#263746';ctx.lineWidth=1;ctx.font='10px system-ui';for(let i=0;i<=4;i++){const y=ymin+(ymax-ymin)*i/4,py=ypx(y);ctx.beginPath();ctx.moveTo(pad.l,py);ctx.lineTo(W-pad.r,py);ctx.stroke();ctx.fillStyle='#91a2b2';ctx.fillText($('chartDisplay').value==='roi'?fmt(y,1)+'%':fmt(y,0),4,py+3);}ctx.beginPath();ctx.moveTo(pad.l,ypx(0));ctx.lineTo(W-pad.r,ypx(0));ctx.strokeStyle='#e7eef5';ctx.setLineDash([4,4]);ctx.stroke();ctx.setLineDash([]);ctx.beginPath();points.forEach((p,i)=>i?ctx.lineTo(xpx(p.x),ypx(p.y)):ctx.moveTo(xpx(p.x),ypx(p.y)));ctx.strokeStyle='#42d6a4';ctx.lineWidth=2.5;ctx.stroke();ctx.fillStyle='#91a2b2';for(let i=0;i<=4;i++){const x=lo+(hi-lo)*i/4;ctx.fillText(fmt(x,0),xpx(x)-18,H-10);}const sx=num($('scenarioPrice').value,spot);ctx.strokeStyle='#f4bd61';ctx.setLineDash([3,4]);ctx.beginPath();ctx.moveTo(xpx(Math.min(hi,Math.max(lo,sx))),pad.t);ctx.lineTo(xpx(Math.min(hi,Math.max(lo,sx))),H-pad.b);ctx.stroke();ctx.setLineDash([]);ctx.fillStyle='#f4bd61';ctx.fillText('Сценарій',Math.min(W-65,xpx(Math.min(hi,Math.max(lo,sx)))+4),pad.t+12);}
+function drawPayoff(){const c=$('payoffChart');if(!c)return;const rect=c.getBoundingClientRect(),dpr=window.devicePixelRatio||1;c.width=Math.max(300,rect.width*dpr);c.height=Math.max(220,rect.height*dpr);const ctx=c.getContext('2d');ctx.scale(dpr,dpr);const W=rect.width,H=rect.height;ctx.clearRect(0,0,W,H);ctx.fillStyle='#0b151e';ctx.fillRect(0,0,W,H);if(!strategyLegs.length){ctx.fillStyle='#91a2b2';ctx.fillText('Додай ноги стратегії, щоб побудувати графік P/L',20,30);return;}const spot=num($('builderSpot').value,90000),lo=Math.max(0,num($('rangeMin').value,spot*.5)),hi=num($('rangeMax').value,spot*1.5),mode=$('calcMode').value,days=num($('scenarioDays').value),shift=num($('scenarioIvShift').value);const N=180,points=[];let ymin=Infinity,ymax=-Infinity;for(let i=0;i<=N;i++){const x=lo+(hi-lo)*i/N,y=chartMetric(calcAt(x,days,mode,shift).pnl);points.push({x,y});ymin=Math.min(ymin,y);ymax=Math.max(ymax,y);}if(ymin===ymax){ymin-=1;ymax+=1;}const pad={l:65,r:15,t:15,b:35},xpx=x=>pad.l+(x-lo)/(hi-lo)*(W-pad.l-pad.r),ypx=y=>pad.t+(ymax-y)/(ymax-ymin)*(H-pad.t-pad.b);ctx.strokeStyle='#263746';ctx.lineWidth=1;ctx.font='10px system-ui';for(let i=0;i<=4;i++){const y=ymin+(ymax-ymin)*i/4,py=ypx(y);ctx.beginPath();ctx.moveTo(pad.l,py);ctx.lineTo(W-pad.r,py);ctx.stroke();ctx.fillStyle='#91a2b2';ctx.fillText($('chartDisplay').value==='roi'?fmt(y,1)+'%':fmt(y,0),4,py+3);}ctx.beginPath();ctx.moveTo(pad.l,ypx(0));ctx.lineTo(W-pad.r,ypx(0));ctx.strokeStyle='#e7eef5';ctx.setLineDash([4,4]);ctx.stroke();ctx.setLineDash([]);ctx.beginPath();points.forEach((p,i)=>i?ctx.lineTo(xpx(p.x),ypx(p.y)):ctx.moveTo(xpx(p.x),ypx(p.y)));ctx.strokeStyle='#42d6a4';ctx.lineWidth=2.5;ctx.stroke();ctx.fillStyle='#91a2b2';for(let i=0;i<=4;i++){const x=lo+(hi-lo)*i/4;ctx.fillText(fmt(x,0),xpx(x)-18,H-10);}const sx=num($('scenarioPrice').value,spot);ctx.strokeStyle='#f4bd61';ctx.setLineDash([3,4]);ctx.beginPath();ctx.moveTo(xpx(Math.min(hi,Math.max(lo,sx))),pad.t);ctx.lineTo(xpx(Math.min(hi,Math.max(lo,sx))),H-pad.b);ctx.stroke();ctx.setLineDash([]);ctx.fillStyle='#f4bd61';ctx.fillText('Сценарій',Math.min(W-65,xpx(Math.min(hi,Math.max(lo,sx)))+4),pad.t+12);}
 let chartRangeAuto=true;function setAutoChartRange(){const spot=num($('builderSpot').value,90000);if(!(spot>0))return;$('rangeMin').value=Math.max(0,spot*.5);$('rangeMax').value=spot*1.5;}setAutoChartRange();$('rangeMin').dataset.manual='0';$('rangeMax').dataset.manual='0';$('rangeMin').addEventListener('input',()=>{$('rangeMin').dataset.manual='1';chartRangeAuto=false;});$('rangeMax').addEventListener('input',()=>{$('rangeMax').dataset.manual='1';chartRangeAuto=false;});$('builderSpot').addEventListener('change',()=>{if(chartRangeAuto){setAutoChartRange();calculateStrategy();}});$('calcMode').onchange=calculateStrategy;$('chartDisplay').onchange=calculateStrategy;$('redrawChart').onclick=calculateStrategy;['scenarioPrice','scenarioDays','scenarioIvShift','builderSpot','riskFree','rangeMin','rangeMax'].forEach(id=>$(id).addEventListener('input',()=>{if(id==='scenarioPrice')$('scenarioPriceManual').value=$('scenarioPrice').value;calculateStrategy();}));$('scenarioPriceManual').addEventListener('change',()=>{const v=Math.max(0,num($('scenarioPriceManual').value));$('scenarioPrice').value=v;calculateStrategy();});$('scenarioDate').onchange=()=>{const d=new Date($('scenarioDate').value+'T12:00:00');const n=Math.max(0,Math.round((d-new Date())/86400000));$('scenarioDays').value=n;calculateStrategy();};
 $('clearStrategy').onclick=()=>{strategyLegs=[];renderLegs();calculateStrategy();};
-$('saveStrategy').onclick=()=>{if(!strategyLegs.length)return alert('Немає що зберігати');const list=JSON.parse(localStorage.getItem(strategyStoreKey)||'[]'),id='s_'+Date.now(),name=$('strategyName').value.trim()||'Стратегія '+new Date().toLocaleString('uk-UA');list.push({id,name,legs:JSON.parse(JSON.stringify(strategyLegs)),spot:num($('builderSpot').value),riskFree:num($('riskFree').value),calcMode:$('calcMode').value,scenarioSpot:num($('scenarioPrice').value),scenarioDays:num($('scenarioDays').value),scenarioIvShift:num($('scenarioIvShift').value),underlying:$('optCurrency').value.trim().toUpperCase(),savedAt:Date.now()});localStorage.setItem(strategyStoreKey,JSON.stringify(list));renderSavedStrategies();$('savedStrategies').value=id;};
+$('saveStrategy').onclick=()=>{if(!strategyLegs.length)return alert('Немає що зберігати');const list=JSON.parse(localStorage.getItem(strategyStoreKey)||'[]'),id='s_'+Date.now(),name=$('strategyName').value.trim()||'Стратегія '+new Date().toLocaleString('uk-UA');list.push({id,name,legs:JSON.parse(JSON.stringify(strategyLegs)),spot:num($('builderSpot').value),riskFree:num($('riskFree').value),calcMode:$('calcMode').value,scenarioSpot:num($('scenarioPrice').value),scenarioDays:num($('scenarioDays').value),scenarioIvShift:num($('scenarioIvShift').value),underlying:$('optCurrency').value.trim().toUpperCase(),savedAt:Date.now()});localStorage.setItem(strategyStoreKey,JSON.stringify(list));window.__ctCloudSaveCollections();renderSavedStrategies();$('savedStrategies').value=id;};
 function renderSavedStrategies(){const list=JSON.parse(localStorage.getItem(strategyStoreKey)||'[]');$('savedStrategies').innerHTML='<option value="">—</option>'+list.map(x=>`<option value="${x.id}">${escapeHtml(x.name)}</option>`).join('');}
 $('loadSaved').onclick=()=>{const x=(JSON.parse(localStorage.getItem(strategyStoreKey)||'[]')).find(z=>z.id===$('savedStrategies').value);if(!x)return;strategyLegs=JSON.parse(JSON.stringify(x.legs||[]));$('builderSpot').value=x.spot||90000;$('riskFree').value=x.riskFree??0;$('strategyName').value=x.name;if(x.underlying)$('optCurrency').value=x.underlying;if(x.calcMode)$('calcMode').value=x.calcMode;$('scenarioPrice').value=x.scenarioSpot??x.spot??90000;$('scenarioPriceManual').value=$('scenarioPrice').value;$('scenarioDays').value=x.scenarioDays??0;$('scenarioIvShift').value=x.scenarioIvShift??0;renderLegs();calculateStrategy();};
-$('deleteSaved').onclick=()=>{const id=$('savedStrategies').value;if(!id)return;const list=JSON.parse(localStorage.getItem(strategyStoreKey)||'[]').filter(x=>x.id!==id);localStorage.setItem(strategyStoreKey,JSON.stringify(list));renderSavedStrategies();};
+$('deleteSaved').onclick=()=>{const id=$('savedStrategies').value;if(!id)return;const list=JSON.parse(localStorage.getItem(strategyStoreKey)||'[]').filter(x=>x.id!==id);localStorage.setItem(strategyStoreKey,JSON.stringify(list));window.__ctCloudSaveCollections();renderSavedStrategies();};
 $('exportSaved').onclick=async()=>{const id=$('savedStrategies').value;if(!id)return alert('Спочатку вибери збережену стратегію.');const x=(JSON.parse(localStorage.getItem(strategyStoreKey)||'[]')).find(z=>z.id===id);if(!x)return alert('Збережену стратегію не знайдено.');const textOut=['CRYPTO TERMINAL — OPTIONS STRATEGY EXPORT','========================================',`Name: ${x.name}`,`Exported at: ${new Date().toISOString()}`,`Exchange/source: ${[...new Set((x.legs||[]).map(l=>l.source||'manual'))].join(', ')}`,`Underlying: ${x.underlying||$('optCurrency').value||'—'}`,`Current spot: ${x.spot}`,`Calculation mode: ${x.calcMode||$('calcMode').value}`,`Risk-free rate (%): ${x.riskFree}`,`Scenario spot: ${x.scenarioSpot??x.spot}`,`Scenario days: ${x.scenarioDays??0}`,`Scenario IV shift (pp): ${x.scenarioIvShift??0}`,'','LEGS','----',...(x.legs||[]).map((l,i)=>`${i+1}. ${String(l.side).toUpperCase()} ${String(l.type).toUpperCase()}\n   Symbol: ${l.symbol||'manual'}\n   Strike: ${l.strike}\n   Expiration: ${l.expiry}\n   Quantity: ${l.qty}\n   Premium: ${l.premium}\n   Premium currency: ${l.priceCurrency||'quote'}\n   IV (%): ${l.iv}\n   Multiplier: ${l.multiplier}\n   Entry fee: ${num(l.entryFee)}\n   Settlement: ${l.settle||'—'}\n   Source: ${l.source||'manual'}`),'','Raw strategy JSON:',JSON.stringify(x,null,2)].join('\n');try{await navigator.clipboard.writeText(textOut);alert('Експорт стратегії скопійовано в буфер обміну.');}catch(e){const ta=document.createElement('textarea');ta.value=textOut;document.body.appendChild(ta);ta.select();const ok=document.execCommand('copy');ta.remove();if(ok)alert('Експорт стратегії скопійовано в буфер обміну.');else alert('Не вдалося скопіювати. Перевір дозвіл браузера на буфер обміну.');}};
 
 // ---------- Full dashboard backup / restore ----------
@@ -983,7 +1173,8 @@ function renderAllPortfolios(){
  const selected=portfolios.filter(p=>selectedAggregateIds.includes(p.id));
  const spot=portfolioTotals(selected),op=aggregateOptionsSelected?optionSummary():{value:0,unrealized:0,realized:0,total:0,count:0};
  const pnl=spot.pnl+op.total,value=spot.value+op.value,realized=spot.realizedTotal+op.realized;
- $('allValue').textContent=money(value);$('allPnl').textContent=(pnl>=0?'+':'')+money(pnl);$('allPnl').className=pnl>=0?'positive':'negative';$('allRealized').textContent=(realized>=0?'+':'')+money(realized);$('allRealized').className=realized>=0?'positive':'negative';$('allCount').textContent=selected.length+(aggregateOptionsSelected?1:0);
+ const allAssetCostBasis=selected.reduce((sum,p)=>{p.transactions.__positionOverrides=p.positionOverrides||{};const ledger=calcLedger(p.transactions);return sum+ledger.holdings.reduce((a,h)=>a+(+h.cost||0),0)+(+p.wallets?.USDT||0)+(+p.wallets?.USDC||0);},0);
+ $('allCostBasis').textContent=money(allAssetCostBasis);$('allValue').textContent=money(value);$('allPnl').textContent=(pnl>=0?'+':'')+money(pnl);$('allPnl').className=pnl>=0?'positive':'negative';$('allRealized').textContent=(realized>=0?'+':'')+money(realized);$('allRealized').className=realized>=0?'positive':'negative';
  const ch=$('allPnl24h');ch.textContent='Spot 24H: '+(spot.complete24?'':'≈ ')+(spot.change24>=0?'+':'')+money(spot.change24)+' · '+(spot.pct24>=0?'+':'')+fmt(spot.pct24,2)+'%';ch.className='change '+(spot.change24>0?'positive':spot.change24<0?'negative':'muted');
  $('allPortfolioFilterBtn').textContent=`Портфелі: ${selected.length===portfolios.length&&aggregateOptionsSelected?'усі':selected.length+(aggregateOptionsSelected?'+ опціони':'')}/${portfolios.length+1} ▾`;
  $('allPortfolioFilterStatus').textContent=(selected.length?selected.map(p=>p.name).join(', '):'Жодного Spot')+(aggregateOptionsSelected?', Опціони':'');
@@ -1067,15 +1258,16 @@ $('analyticsPeriod').onchange=drawAnalytics;
 $('analyticsPortfolioFilterBtn').onclick=()=>{$('analyticsPortfolioFilterMenu').hidden=!$('analyticsPortfolioFilterMenu').hidden;};
 $('analyticsAssetFilterBtn').onclick=()=>{$('analyticsAssetFilterMenu').hidden=!$('analyticsAssetFilterMenu').hidden;};
 document.addEventListener('click',e=>{for(const [mid,bid] of [['analyticsPortfolioFilterMenu','analyticsPortfolioFilterBtn'],['analyticsAssetFilterMenu','analyticsAssetFilterBtn']]){const m=$(mid),b=$(bid);if(m&&!m.hidden&&!m.contains(e.target)&&e.target!==b)m.hidden=true;}});
+let optionPnlMode='unrealized';
 function renderOptionsPortfolio(){
- const z=optionSummary();$('opCount').textContent=z.count;$('opValue').textContent=money(z.value);for(const [id,v] of [['opUnrealized',z.unrealized],['opRealized',z.realized],['opTotal',z.total]]){$(id).textContent=(v>=0?'+':'')+money(v);$(id).className=v>=0?'positive':'negative';}$('opRoi').textContent=z.roi===null?'—':fmt(z.roi,2)+'%';
+ const z=optionSummary();$('opCount').textContent=z.count;$('opValue').textContent=money(z.value);const selectedPnl=optionPnlMode==='realized'?z.realized:z.unrealized;$('opSelectedPnl').textContent=(selectedPnl>=0?'+':'')+money(selectedPnl);$('opSelectedPnl').className=selectedPnl>=0?'positive':'negative';$('opPnlLabel').textContent=optionPnlMode==='realized'?'Реалізований P/L':'Нереалізований P/L';$('opPnlUnrealized').classList.toggle('active',optionPnlMode==='unrealized');$('opPnlRealized').classList.toggle('active',optionPnlMode==='realized');$('opPnlUnrealized').setAttribute('aria-pressed',String(optionPnlMode==='unrealized'));$('opPnlRealized').setAttribute('aria-pressed',String(optionPnlMode==='realized'));$('opTotal').textContent=(z.total>=0?'+':'')+money(z.total);$('opTotal').className=z.total>=0?'positive':'negative';$('opRoi').textContent=z.roi===null?'—':fmt(z.roi,2)+'%';const cash=Object.entries(optionCashLedger.wallets||{}).filter(([,v])=>Math.abs(+v)>1e-10).sort(([a],[b])=>a.localeCompare(b));$('opCashBalance').textContent=cash.length?cash.map(([c,v])=>c+' '+fmt(v,4)).join(' · '):'0';
  const f=$('opFilter').value||'all';const strategies=[...new Set(optionPositions.map(optionStrategyLabel))],contracts=[...new Set(optionPositions.map(p=>p.symbol||p.base+' '+p.type.toUpperCase()+' '+p.strike))];$('opFilter').innerHTML='<option value="all">Усі позиції</option><optgroup label="За стратегією">'+strategies.map(k=>`<option value="strategy:${escapeHtml(k)}">${escapeHtml(k)}</option>`).join('')+'</optgroup><optgroup label="За контрактом">'+contracts.map(k=>`<option value="contract:${escapeHtml(k)}">${escapeHtml(k)}</option>`).join('')+'</optgroup>';$('opFilter').value=(f==='all'||strategies.some(k=>f==='strategy:'+k)||contracts.some(k=>f==='contract:'+k))?f:'all';const filter=$('opFilter').value;
  let rows=optionPositions.filter(p=>p.openQty>0&& (filter==='all'||(filter.startsWith('strategy:')?filter.slice(9)===optionStrategyLabel(p):filter.slice(9)===(p.symbol||p.base+' '+p.type.toUpperCase()+' '+p.strike))));
  rows.sort((a,b)=>{let av,bv;if(opSortState.key==='expiry'){av=String(a.expiry||'');bv=String(b.expiry||'');return av.localeCompare(bv)*opSortState.dir;}if(opSortState.key==='value'){av=(a.entryPremium*a.multiplier*a.openQty+(+a.openFeeRemaining||0))*optionEntryFx(a);bv=(b.entryPremium*b.multiplier*b.openQty+(+b.openFeeRemaining||0))*optionEntryFx(b);}else if(opSortState.key==='roi'){const pa=optionPositionPnl(a),pb=optionPositionPnl(b),ba=(a.entryPremium*a.multiplier*a.openQty+(+a.openFeeRemaining||0))*optionEntryFx(a),bb=(b.entryPremium*b.multiplier*b.openQty+(+b.openFeeRemaining||0))*optionEntryFx(b);av=pa===null||!ba?NaN:pa/ba*100;bv=pb===null||!bb?NaN:pb/bb*100;}else{av=optionPositionPnl(a);bv=optionPositionPnl(b);}return ((Number.isFinite(av)?av:-Infinity)-(Number.isFinite(bv)?bv:-Infinity))*opSortState.dir;});
  $('opRows').innerHTML=rows.length?rows.map(p=>{const pnl=optionPositionPnl(p),basis=(p.entryPremium*p.multiplier*p.openQty*optionEntryFx(p))+(+p.openFeeRemaining||0)*optionEntryFx(p),roi=pnl===null||!basis?null:pnl/basis*100,entryDecimals=p.priceCurrency==='base'?6:2,entryCost=(p.entryPremium*p.multiplier*p.openQty+(+p.openFeeRemaining||0))*optionEntryFx(p);return `<tr><td>${escapeHtml(p.symbol||p.base+' '+p.type.toUpperCase()+' '+p.strike)}</td><td>${escapeHtml(String(p.exchange||'manual').toUpperCase())}</td><td>${p.side.toUpperCase()} ${p.type.toUpperCase()}</td><td class="num">${fmt(p.openQty,4)}</td><td class="num">${fmt(p.strike,2)}</td><td>${fmtDate(p.expiry)}</td><td class="num">${fmt(p.entryPremium,entryDecimals)} ${escapeHtml(p.priceCurrency==='base'?p.base:(p.settle||'USD'))}</td><td class="num">${p.markPrice!==null&&p.markPrice!==undefined&&Number.isFinite(+p.markPrice)?fmt(p.markPrice,entryDecimals):'—'}</td><td class="num">${money(entryCost)}</td><td class="num ${pnl===null?'muted':pnl>=0?'positive':'negative'}">${pnl===null?'—':(pnl>=0?'+':'')+money(pnl)}</td><td class="num">${roi===null?'—':fmt(roi,2)+'%'}</td><td><button class="smallbtn" data-edit-option="${escapeHtml(p.id)}">Редагувати</button> <button class="smallbtn" data-close="${escapeHtml(p.id)}">Закрити</button></td></tr>`;}).join(''):'<tr><td colspan="12" class="empty">Немає відкритих позицій для цього фільтра</td></tr>';
- $('opUpdated').textContent=optionLastUpdate?'Останнє успішне оновлення: '+new Date(optionLastUpdate).toLocaleString('uk-UA'):'Mark Price ще не оновлювалась';const cfrom=closedDateFilter.from?new Date(closedDateFilter.from+'T00:00:00').getTime():-Infinity,cto=closedDateFilter.to?new Date(closedDateFilter.to+'T23:59:59.999').getTime():Infinity,closedFiltered=[...optionClosed].filter(x=>x.ts>=cfrom&&x.ts<=cto).sort((a,b)=>b.ts-a.ts);$('opClosedRows').innerHTML=closedFiltered.length?closedFiltered.map(x=>`<tr><td>${new Date(x.ts).toLocaleString('uk-UA')}</td><td>${escapeHtml(x.symbol||'Option')}</td><td>${escapeHtml(String(x.exchange||'manual').toUpperCase())}</td><td class="num">${fmt(x.qty,4)}</td><td class="num">${fmt(x.entryPremium,x.priceCurrency==='base'?6:2)}</td><td class="num">${fmt(x.closePremium,x.priceCurrency==='base'?6:2)}</td><td class="num">${fmt(x.fee,2)}</td><td class="num ${x.realizedUSD>=0?'positive':'negative'}">${(x.realizedUSD>=0?'+':'')+money(x.realizedUSD)}</td></tr>`).join(''):'<tr><td colspan="8" class="empty">'+(optionClosed.length?'За вибраний період закритих позицій немає':'Закритих позицій поки немає')+'</td></tr>';const ccount=$('closedDateCount');if(ccount)ccount.textContent=`Показано ${closedFiltered.length} із ${optionClosed.length}`;
+ $('opUpdated').textContent=optionLastUpdate?'Останнє успішне оновлення: '+new Date(optionLastUpdate).toLocaleString('uk-UA'):'Марк-ціна ще не оновлювалася';const cfrom=closedDateFilter.from?new Date(closedDateFilter.from+'T00:00:00').getTime():-Infinity,cto=closedDateFilter.to?new Date(closedDateFilter.to+'T23:59:59.999').getTime():Infinity,closedFiltered=[...optionClosed].filter(x=>x.ts>=cfrom&&x.ts<=cto).sort((a,b)=>b.ts-a.ts);$('opClosedRows').innerHTML=closedFiltered.length?closedFiltered.map(x=>`<tr><td>${new Date(x.ts).toLocaleString('uk-UA')}</td><td>${escapeHtml(x.symbol||'Option')}</td><td>${escapeHtml(String(x.exchange||'manual').toUpperCase())}</td><td class="num">${fmt(x.qty,4)}</td><td class="num">${fmt(x.entryPremium,x.priceCurrency==='base'?6:2)}</td><td class="num">${fmt(x.closePremium,x.priceCurrency==='base'?6:2)}</td><td class="num">${fmt(x.fee,2)}</td><td class="num ${x.realizedUSD>=0?'positive':'negative'}">${(x.realizedUSD>=0?'+':'')+money(x.realizedUSD)}</td></tr>`).join(''):'<tr><td colspan="8" class="empty">'+(optionClosed.length?'За вибраний період закритих позицій немає':'Закритих позицій поки немає')+'</td></tr>';const ccount=$('closedDateCount');if(ccount)ccount.textContent=`Показано ${closedFiltered.length} із ${optionClosed.length}`;renderWallets();
  document.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>closeOptionPosition(b.dataset.close));document.querySelectorAll('[data-edit-option]').forEach(b=>b.onclick=()=>editOptionPosition(b.dataset.editOption));
- const sorters=[['opSortExpiry','expiry','Expiration'],['opSortValue','value','Вартість позиції'],['opSortPnl','pnl','P/L'],['opSortRoi','roi','ROI']];sorters.forEach(([id,key,label])=>{const el=$(id);if(!el)return;el.textContent=label+' '+(opSortState.key===key?(opSortState.dir===1?'↑':'↓'):'↕');el.classList.toggle('active',opSortState.key===key);el.onclick=()=>{opSortState={key,dir:opSortState.key===key?-opSortState.dir:(key==='expiry'?-1:-1)};renderOptionsPortfolio();};});
+ const sorters=[['opSortExpiry','expiry','Експірація'],['opSortValue','value','Вартість позиції'],['opSortPnl','pnl','P/L'],['opSortRoi','roi','ROI']];sorters.forEach(([id,key,label])=>{const el=$(id);if(!el)return;el.textContent=label+' '+(opSortState.key===key?(opSortState.dir===1?'↑':'↓'):'↕');el.classList.toggle('active',opSortState.key===key);el.onclick=()=>{opSortState={key,dir:opSortState.key===key?-opSortState.dir:(key==='expiry'?-1:-1)};renderOptionsPortfolio();};});
 }
 $('opFilter').onchange=renderOptionsPortfolio;
 $('closedDateFrom').onchange=e=>{closedDateFilter.from=e.target.value;renderOptionsPortfolio()};$('closedDateTo').onchange=e=>{closedDateFilter.to=e.target.value;renderOptionsPortfolio()};$('closedDateClear').onclick=()=>{closedDateFilter={from:'',to:''};$('closedDateFrom').value=$('closedDateTo').value='';renderOptionsPortfolio()};
@@ -1084,18 +1276,54 @@ const _recordAnalyticsSnapshot_v14=recordAnalyticsSnapshot;
 recordAnalyticsSnapshot=function(){
  if(!analyticsMarketReady)return;const held=new Set();portfolios.forEach(p=>{p.transactions.__positionOverrides=p.positionOverrides||{};calcLedger(p.transactions).holdings.forEach(h=>{if(h.qty>0)held.add(h.asset);});});if([...held].some(a=>!(prices[a]?.price>0)))return;
  const now=Date.now(),portfolioAssets={},assets={},portMap={},values={};let spotPnl=0;portfolios.forEach(p=>{p.transactions.__positionOverrides=p.positionOverrides||{};const l=calcLedger(p.transactions),map={},realizedByAsset={};p.transactions.filter(t=>t.type==='sell').forEach(t=>realizedByAsset[t.asset]=(realizedByAsset[t.asset]||0)+(+t.realized||0));l.holdings.forEach(h=>{const px=prices[h.asset]?.price||0;map[h.asset]={pnl:px*h.qty-h.cost+(realizedByAsset[h.asset]||0),value:px*h.qty,cost:h.cost,qty:h.qty};});Object.entries(realizedByAsset).forEach(([a,v])=>{if(!map[a])map[a]={pnl:v,value:0,cost:0,qty:0};});['USDT','USDC'].forEach(k=>{const q=+(p.wallets?.[k]||0);if(q)map[k]={pnl:0,value:q,cost:q,qty:q};});portfolioAssets[p.id]=map;let pp=0,pv=0;Object.entries(map).forEach(([a,x])=>{pp+=x.pnl;pv+=x.value;const g=assets[a]||(assets[a]={value:0,cost:0,qty:0});g.value+=x.value;g.cost+=x.cost;g.qty+=x.qty;});portMap[p.id]=pp;values[p.id]=pv;spotPnl+=pp;});const optionsByBasePnl={},optionsByBaseBasis={},optionsByBase={};optionPositions.filter(p=>p.openQty>0).forEach(p=>{const pnl=optionPositionPnl(p),fx=optionFx(p),v=p.markPrice!==null&&p.markPrice!==undefined&&fx>0?p.markPrice*p.multiplier*p.openQty*fx:0;if(pnl!==null)optionsByBasePnl[p.base]=(optionsByBasePnl[p.base]||0)+pnl;optionsByBaseBasis[p.base]=(optionsByBaseBasis[p.base]||0)+(p.entryPremium*p.multiplier*p.openQty+(+p.openFeeRemaining||0))*optionEntryFx(p);optionsByBase[p.base]=(optionsByBase[p.base]||0)+v;});optionClosed.forEach(c=>{if(c.base)optionsByBasePnl[c.base]=(optionsByBasePnl[c.base]||0)+(+c.realizedUSD||0);});const optionsPnl=Object.values(optionsByBasePnl).reduce((a,b)=>a+b,0);
- const snap={ts:now,spotPnl,optionsPnl,portMap,values,assets,optionsByBase,portfolioAssets,optionsByBasePnl,optionsByBaseBasis};const last=analyticsHistory.at(-1);if(last&&now-last.ts<30000&&JSON.stringify([last.portfolioAssets,last.optionsByBasePnl])===JSON.stringify([snap.portfolioAssets,snap.optionsByBasePnl]))return;analyticsHistory.push(snap);if(analyticsHistory.length>5000)analyticsHistory=analyticsHistory.slice(-5000);localStorage.setItem('ct_analytics_history',JSON.stringify(analyticsHistory));drawAnalytics();
+ const snap={ts:now,spotPnl,optionsPnl,portMap,values,assets,optionsByBase,portfolioAssets,optionsByBasePnl,optionsByBaseBasis};const last=analyticsHistory.at(-1);if(last&&now-last.ts<30000&&JSON.stringify([last.portfolioAssets,last.optionsByBasePnl])===JSON.stringify([snap.portfolioAssets,snap.optionsByBasePnl]))return;analyticsHistory.push(snap);analyticsHistory=compactAnalyticsHistory(analyticsHistory);localStorage.setItem('ct_analytics_history',JSON.stringify(analyticsHistory));if(cloudUser.isAdmin)window.__ctCloudSaveCollections();drawAnalytics();
 };
 // Redraw canvas charts after first reveal; keep pie canvases square and remeasure on resize.
 const _collapseInit=document.querySelectorAll('[data-collapse-target]');_collapseInit.forEach(t=>t.addEventListener('click',()=>{if(t.dataset.collapseKey==='analytics'&&$('analyticsContent')&&!$('analyticsContent').hidden){requestAnimationFrame(()=>requestAnimationFrame(()=>drawAnalytics()));}}));
 window.addEventListener('resize',()=>{if($('analyticsContent')&&!$('analyticsContent').hidden)requestAnimationFrame(drawAnalytics);});
 
 
+$('pnlModeUsd').addEventListener('click',()=>{portfolioPnlMode='usd';localStorage.setItem('ct_portfolio_pnl_mode',portfolioPnlMode);renderPortfolio();});
+$('pnlModePct').addEventListener('click',()=>{portfolioPnlMode='pct';localStorage.setItem('ct_portfolio_pnl_mode',portfolioPnlMode);renderPortfolio();});
+
 // Initialize strategy UI and load Bybit as the preferred public market-data source.
 $('scenarioDate').value=new Date().toISOString().slice(0,10);renderLegs();renderSavedStrategies();$('scenarioPrice').value=num($('builderSpot').value,90000);$('scenarioPriceManual').value=num($('builderSpot').value,90000);$('scenarioPrice').max=String(Math.max(200000,num($('builderSpot').value)*2));$('scenarioPrice').min='0';loadInstrumentList();
 window.addEventListener('resize',()=>{drawPayoff();drawAnalytics();});
-updatePortfolioSelect();renderPortfolio();renderWatch();renderOptionsPortfolio();drawAnalytics();if(spotLastUpdate)$('lastUpdate').innerHTML='<b>● Останнє оновлення</b> '+new Date(spotLastUpdate).toLocaleString('uk-UA');$('journalDateFrom').value=journalDateFilter.from;$('journalDateTo').value=journalDateFilter.to;$('closedDateFrom').value=closedDateFilter.from;$('closedDateTo').value=closedDateFilter.to;loadTickerDirectory();
+if(cloudUser.isAdmin){
+ const panel=$('cloudAdminPanel');panel.hidden=false;
+ const globalKeys=['analytics','options','optionStrategies','watchlistView','watchlistEdit','importData','exportData','settings'];
+ let adminRecords=[];
+ const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ async function loadAdminUsers(selectedEmail){
+  const r=await window.__CT_CLOUD__.api.adminUsers();adminRecords=r.users||[];
+  $('cloudAdminUser').innerHTML='<option value="">Новий користувач</option>'+adminRecords.map(u=>`<option value="${esc(u.email)}">${esc(u.email)} · ${u.role==='admin'?'admin':'user'}</option>`).join('');
+  if(selectedEmail)$('cloudAdminUser').value=selectedEmail;
+  renderAdminEditor();$('cloudAdminStatus').textContent=`Завантажено користувачів: ${adminRecords.length}`;
+ }
+ function renderAdminEditor(){
+  const email=$('cloudAdminUser').value,record=adminRecords.find(u=>u.email===email);$('cloudAdminEmail').value=record?.email||'';$('cloudAdminBlocked').checked=record?.blocked===true;$('cloudAdminRole').checked=record?.role==='admin';
+  const g=record?.permissions?.global||{}; $('cloudAdminGlobal').innerHTML='<h3>Глобальні модулі</h3>'+globalKeys.map(k=>`<label class="check"><input type="checkbox" data-cloud-global="${k}" ${g[k]===true?'checked':''}> ${{analytics:'Аналітика',options:'Опціони',optionStrategies:'Стратегії опціонів',watchlistView:'Перегляд Watchlist',watchlistEdit:'Редагування Watchlist',importData:'Імпорт даних',exportData:'Експорт даних',settings:'Налаштування'}[k]||k}</label>`).join('');
+  const pp=record?.permissions?.portfolios||{};
+  $('cloudAdminPortfolioRights').innerHTML=portfolios.map(p=>`<div class="card" style="padding:10px"><b>${esc(p.name)}</b><div class="row" style="flex-wrap:wrap">${['view','history','trade','edit','funds'].map(k=>`<label class="check"><input type="checkbox" data-cloud-portfolio="${esc(p.id)}" data-cloud-permission="${k}" ${pp[p.id]?.[k]===true?'checked':''}> ${{view:'Перегляд',history:'Історія',trade:'Торгівля',edit:'Редагування',funds:'Кошти'}[k]}</label>`).join('')}</div></div>`).join('')||'<p>Портфелів поки немає.</p>';
+ }
+ $('cloudAdminUser').onchange=renderAdminEditor;$('cloudAdminRefresh').onclick=()=>loadAdminUsers($('cloudAdminUser').value).catch(e=>$('cloudAdminStatus').textContent=e.message);
+ $('cloudAdminSave').onclick=async()=>{
+  const email=$('cloudAdminEmail').value.trim().toLowerCase();if(!email)return alert('Вкажи email користувача.');
+  const permissions={global:{},portfolios:{}};globalKeys.forEach(k=>permissions.global[k]=!!document.querySelector(`[data-cloud-global="${k}"]`)?.checked);
+  document.querySelectorAll('[data-cloud-portfolio]').forEach(c=>{const id=c.dataset.cloudPortfolio,key=c.dataset.cloudPermission;permissions.portfolios[id] ||= {view:false,history:false,trade:false,edit:false,funds:false};permissions.portfolios[id][key]=c.checked;});
+  try{await window.__CT_CLOUD__.api.saveUser({email,blocked:$('cloudAdminBlocked').checked,permissions});const existing=adminRecords.find(u=>u.email===email);if((existing?.role==='admin')!==$('cloudAdminRole').checked)await window.__CT_CLOUD__.api.setAdminRole(email,$('cloudAdminRole').checked);await loadAdminUsers(email);$('cloudAdminStatus').textContent='Права користувача збережено.';}
+  catch(e){$('cloudAdminStatus').textContent='Помилка збереження: '+e.message;}
+ };
+ $('cloudAdminAudit').onclick=async()=>{try{const a=await window.__CT_CLOUD__.api.adminAudit();$('cloudAdminAuditOutput').textContent=JSON.stringify(a.events||[],null,2);}catch(e){$('cloudAdminStatus').textContent='Не вдалося завантажити аудит: '+e.message;}};
+ $('cloudMigrationImport').onclick=async()=>{const file=$('cloudMigrationFile').files?.[0];if(!file)return alert('Обери migration-payload-v1.0.json.');try{const payload=JSON.parse(await file.text());const count=payload.portfolios?.length||0;if(payload.schema!=='crypto-terminal-cloud-migration'||!count)return alert('Файл не схожий на підготовлений Cloud migration payload.');if(!confirm(`Буде імпортовано ${count} портфелів і ${payload.collections?Object.keys(payload.collections).length:0} спільних колекцій. Сервер відмовиться перезаписувати непорожній індекс. Продовжити?`))return;const result=await window.__CT_CLOUD__.api.importMigration(payload);$('cloudAdminStatus').textContent=result.replayed?'Ця міграція вже була виконана.':'Імпорт завершено. Перезавантаж сторінку, щоб завантажити портфелі.';}catch(e){$('cloudAdminStatus').textContent='Помилка імпорту: '+e.message;}};
+ loadAdminUsers().catch(e=>$('cloudAdminStatus').textContent='Не вдалося завантажити користувачів: '+e.message);
+}else{$('cloudAdminPanel').remove();}
+if(!cloudUser.isAdmin){$('createPortfolio').hidden=true;$('renamePortfolio').hidden=true;$('deletePortfolio').hidden=true;}
+updatePortfolioSelect();renderPortfolio();renderWatch();renderOptionsPortfolio();drawAnalytics();applyCloudPermissions();if(spotLastUpdate)$('lastUpdate').innerHTML='<b>● Останнє оновлення</b> '+new Date(spotLastUpdate).toLocaleString('uk-UA');$('journalDateFrom').value=journalDateFilter.from;$('journalDateTo').value=journalDateFilter.to;$('closedDateFrom').value=closedDateFilter.from;$('closedDateTo').value=closedDateFilter.to;loadTickerDirectory();
+// Refresh market data automatically on every authenticated app open.
+void refresh();
 
+})().catch(error=>{console.error('Crypto Terminal Cloud boot failed',error);document.body.innerHTML='<main style="padding:24px;font:16px system-ui"><h1>Crypto Terminal Cloud</h1><p>Помилка запуску: '+String(error.message||error).replace(/[<>]/g,'')+'</p></main>';});
 
 </script>
 
@@ -1106,10 +1334,11 @@ updatePortfolioSelect();renderPortfolio();renderWatch();renderOptionsPortfolio()
  <div class="dialog-actions"><button type="button" id="operationDateCancel">Скасувати</button><button type="button" class="primary" id="operationDateConfirm">Підтвердити</button></div>
 </dialog>
 <script>
-let selectedOperationTimestamp=null, pendingDatedOperation=null;
+window.selectedOperationTimestamp=null; let pendingDatedOperation=null;
 function localDateInputValue(){const d=new Date();d.setMinutes(d.getMinutes()-d.getTimezoneOffset());return d.toISOString().slice(0,10);}
-function openOperationDateDialog(callback,label){pendingDatedOperation=callback;$('operationDateDescription').textContent='Вкажи фактичну дату '+label+'. За замовчуванням встановлено сьогоднішню дату.';$('operationDateInput').value=localDateInputValue();$('operationDateDialog').showModal();}
-$('operationDateCancel').onclick=()=>{$('operationDateDialog').close();pendingDatedOperation=null;};
-$('operationDateConfirm').onclick=()=>{const v=$('operationDateInput').value;if(!/^\d{4}-\d{2}-\d{2}$/.test(v))return alert('Обери коректну дату операції.');const d=new Date(v+'T12:00:00');if(Number.isNaN(d.getTime()))return alert('Некоректна дата операції.');selectedOperationTimestamp=d.getTime();const fn=pendingDatedOperation;pendingDatedOperation=null;$('operationDateDialog').close();if(fn)fn();};
+function openOperationDateDialog(callback,label){pendingDatedOperation=callback;document.getElementById('operationDateDescription').textContent='Вкажи фактичну дату '+label+'. За замовчуванням встановлено сьогоднішню дату.';document.getElementById('operationDateInput').value=localDateInputValue();document.getElementById('operationDateDialog').showModal();}
+document.getElementById('operationDateCancel').onclick=()=>{document.getElementById('operationDateDialog').close();pendingDatedOperation=null;};
+document.getElementById('operationDateConfirm').onclick=()=>{const v=document.getElementById('operationDateInput').value;if(!/^\d{4}-\d{2}-\d{2}$/.test(v))return alert('Обери коректну дату операції.');const d=new Date(v+'T12:00:00');if(Number.isNaN(d.getTime()))return alert('Некоректна дата операції.');window.selectedOperationTimestamp=d.getTime();const fn=pendingDatedOperation;pendingDatedOperation=null;document.getElementById('operationDateDialog').close();if(fn)fn();};
+
 </script>
 </body></html>
