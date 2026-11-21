@@ -461,7 +461,7 @@ const cloudUser=cloudData.user||{};
 if(guestMode){
  document.querySelectorAll('.grid > section.card:not(:first-child)').forEach(section=>section.hidden=true);
  $('guestLogin').hidden=false;$('guestModeLabel').hidden=false;$('guestLoginArea').hidden=false;
- const login=()=>{const target=location.origin+'/';location.href='https://crypto-terminal.cloudflareaccess.com/cdn-cgi/access/login/crypto-terminal-1zu.pages.dev?redirect_url='+encodeURIComponent(target);};
+ const login=()=>{   const target=location.origin+'/';   location.href='https://crypto-terminal.cloudflareaccess.com/cdn-cgi/access/login/crypto-terminal-1zu.pages.dev/api/*?redirect_url='+encodeURIComponent(target); };
  $('guestLogin').onclick=login;$('guestLoginMarket').onclick=login;
  $('lastUpdate').textContent='Публічний перегляд · приватні дані приховані';
 }else{
