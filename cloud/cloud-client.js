@@ -82,31 +82,68 @@
   }
 
   async function bootstrap() {
+    // Identity and permission-filtered shared collections are the startup gate.
+    // Spot portfolio states, transaction histories and Options cash are loaded
+    // independently after this point and streamed to the page as each is ready.
     const me = await request('/me');
     if (!me.user || !me.user.provisioned || me.user.blocked) throw new CloudError('Account is not provisioned for Crypto Terminal Cloud', 403, me);
     const user = me.user;
     const permissions = user.permissions || { portfolios: {} };
-    const index = await request('/workspaces/main/portfolios');
-    const portfolios = [];
-    for (const meta of index.portfolios || []) {
-      assertView({ ...(!Array.isArray(permissions) ? permissions : {}), isAdmin: user.isAdmin === true }, meta.id);
-      const hasHistory = user.isAdmin || permissions.portfolios?.[meta.id]?.history === true;
-      const [stateResult, historyResult, adjustmentResult] = await Promise.all([
-        request(`/workspaces/main/portfolios/${encodeURIComponent(meta.id)}/state`),
-        hasHistory ? request(`/workspaces/main/portfolios/${encodeURIComponent(meta.id)}/transactions`).catch(error => { if (error.status === 403) return null; throw error; }) : Promise.resolve(null),
-        hasHistory ? request(`/workspaces/main/portfolios/${encodeURIComponent(meta.id)}/adjustments`).catch(error => { if (error.status === 403) return null; throw error; }) : Promise.resolve(null)
-      ]);
-      const state = stateResult.state || {};
-      portfolios.push(toLegacyPortfolio(meta, state, historyResult?.transactions, historyResult?.positionOverrides, adjustmentResult?.adjustments));
-    }
-    let collections = { collections: {}, revision: 0, deniedKeys: [] };
-    try { collections = await request('/workspaces/main/collections'); }
-    catch (error) { if (error.status !== 403) throw error; }
-    let optionsCash = null;
-    if (user.isAdmin || permissions.global?.options === true) optionsCash = await request('/options/main/cash');
+    const isAdmin = user.isAdmin === true;
+    const [index, collectionsResult] = await Promise.all([
+      request('/workspaces/main/portfolios'),
+      request('/workspaces/main/collections').catch(error => {
+        if (error.status === 403) return { collections: {}, revision: 0, deniedKeys: [] };
+        throw error;
+      })
+    ]);
+
+    root.__CT_CLOUD_PROGRESS_QUEUE__ = [];
+    root.__CT_CLOUD_PROGRESS_HANDLER__ = null;
+    const emit = event => {
+      if (typeof root.__CT_CLOUD_PROGRESS_HANDLER__ === 'function') {
+        try { root.__CT_CLOUD_PROGRESS_HANDLER__(event); } catch (error) { console.error('Cloud progressive update failed', error); }
+      } else root.__CT_CLOUD_PROGRESS_QUEUE__.push(event);
+    };
+    const portfolioMetas = index.portfolios || [];
+    // Start every portfolio branch immediately. State is delivered first so
+    // the Spot block can render before slower transaction history arrives.
+    Promise.all(portfolioMetas.map(async meta => {
+      try {
+        assertView({ ...(!Array.isArray(permissions) ? permissions : {}), isAdmin }, meta.id);
+        const encodedId = encodeURIComponent(meta.id);
+        const stateResult = await request(`/workspaces/main/portfolios/${encodedId}/state`);
+        const state = stateResult.state || {};
+        const stateOnly = toLegacyPortfolio(meta, state, null, null);
+        emit({ type: 'portfolio', phase: 'state', portfolio: stateOnly });
+        const hasHistory = isAdmin || permissions.portfolios?.[meta.id]?.history === true;
+        if (!hasHistory) {
+          emit({ type: 'portfolio', phase: 'complete', portfolio: stateOnly });
+          return;
+        }
+        const [historyResult, adjustmentResult] = await Promise.all([
+          request(`/workspaces/main/portfolios/${encodedId}/transactions`).catch(error => { if (error.status === 403) return null; throw error; }),
+          request(`/workspaces/main/portfolios/${encodedId}/adjustments`).catch(error => { if (error.status === 403) return null; throw error; })
+        ]);
+        const complete = toLegacyPortfolio(meta, state, historyResult?.transactions, historyResult?.positionOverrides, adjustmentResult?.adjustments);
+        emit({ type: 'portfolio', phase: 'complete', portfolio: complete });
+      } catch (error) {
+        emit({ type: 'portfolio-error', id: meta.id, name: meta.name, error: error.message || String(error) });
+      }
+    })).then(() => emit({ type: 'portfolios-complete' }));
+
+    if (isAdmin || permissions.global?.options === true) {
+      request('/options/main/cash').then(optionsCash => emit({ type: 'options-cash', optionsCash }))
+        .catch(error => emit({ type: 'options-cash-error', error: error.message || String(error) }));
+    } else emit({ type: 'options-cash', optionsCash: null });
+
     return {
-      user, permissions, portfolios, optionsCash, collections: collections.collections || {},
-      collectionsRevision: Number(collections.revision || 0), deniedKeys: collections.deniedKeys || []
+      user, permissions, portfolios: [], optionsCash: null,
+      collections: collectionsResult.collections || {},
+      collectionsRevision: Number(collectionsResult.revision || 0),
+      deniedKeys: collectionsResult.deniedKeys || [],
+      progressive: true,
+      portfolioCount: portfolioMetas.length
     };
   }
 
