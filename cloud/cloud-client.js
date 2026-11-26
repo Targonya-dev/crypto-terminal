@@ -11,6 +11,16 @@
     'ct_option_strategies_v1', 'ct_analytics_history'
   ];
   const jsonClone = value => JSON.parse(JSON.stringify(value));
+  const epochMs = value => {
+    if (typeof value === 'number' && Number.isFinite(value)) return value;
+    if (typeof value === 'string' && value.trim()) {
+      const numeric = Number(value);
+      if (Number.isFinite(numeric)) return numeric;
+      const parsed = Date.parse(value);
+      if (Number.isFinite(parsed)) return parsed;
+    }
+    return Number.NaN;
+  };
   // Keep an operation key across transport failures so a retry after an
   // ambiguous timeout cannot debit a wallet or append a trade twice.
   const pendingOperations = new Map();
@@ -57,6 +67,9 @@
     // Users with view but without history receive a state-only projection.
     // Synthetic opening rows preserve the legacy UI's ledger renderer without leaking history.
     if (!Array.isArray(transactions)) journal = [];
+    // The Worker emits ISO-8601 timestamps; legacy browser records use epoch ms.
+    // Normalize both to epoch milliseconds before any ledger sorting/filtering.
+    journal = journal.map(row => { const ts = epochMs(row?.ts ?? row?.timestamp ?? row?.createdAt); return Number.isFinite(ts) ? { ...row, ts } : row; });
     if (!journal.length && Array.isArray(state.positions)) {
       journal = state.positions.map((p, i) => ({
         id: `cloud_state_${meta.id}_${i}`, type: 'opening', asset: p.asset,
@@ -188,6 +201,8 @@
       // A server operation response may omit history by design. Append only the authorized receipt row.
       if (portfolio._cloudCanHistory && response.transaction) {
         const receipt = jsonClone(response.transaction);
+        const receiptTs = epochMs(receipt.ts ?? receipt.timestamp ?? receipt.createdAt);
+        if (Number.isFinite(receiptTs)) receipt.ts = receiptTs;
         const receiptId = receipt.id == null ? null : String(receipt.id);
         const alreadyPresent = portfolio.transactions.some(t =>
           (receiptId && t.id != null && String(t.id) === receiptId) ||
