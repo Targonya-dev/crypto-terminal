@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Crypto Terminal — v1.12.7</title>
+<title>Crypto Terminal — v1.12.7.2</title>
 <style>
 :root{color-scheme:dark;--bg:#0b1118;--panel:#121c26;--panel2:#172431;--line:#263746;--text:#e7eef5;--muted:#91a2b2;--green:#42d6a4;--red:#ff737d;--amber:#f4bd61;--blue:#7cb8ff;--radius:13px}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 10% 0%,#132537 0,transparent 40%),var(--bg);color:var(--text);font:14px/1.5 Inter,system-ui,-apple-system,Segoe UI,sans-serif}
@@ -16,6 +16,7 @@ table{width:100%;border-collapse:collapse;font-size:12px}th{text-align:left;colo
 .formgrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}.field{display:flex;flex-direction:column;gap:5px}.field label{font-size:11px;color:var(--muted)}input,select{background:#0c1720;border:1px solid var(--line);border-radius:8px;padding:9px 10px;min-width:0;width:100%;outline:none}input:focus,select:focus{border-color:var(--green)}
 .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.row .field{flex:1;min-width:115px}.smallbtn{padding:6px 9px;font-size:11px}.empty{text-align:center;color:var(--muted);padding:20px 5px}.notice{font-size:11px;color:var(--muted);margin-top:10px;line-height:1.55}.pill{padding:3px 7px;border-radius:6px;background:#203344;color:#a9c9e8;font:10px ui-monospace,monospace}.optiongrid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:13px}.metric{background:#0d1821;border:1px solid #20303e;border-radius:9px;padding:10px}.metric span{display:block;color:var(--muted);font-size:10px}.metric b{display:block;font:600 15px ui-monospace,monospace;margin-top:4px}
 .leg-input{min-width:85px;padding:6px 7px;font-size:11px}.leg-select{min-width:90px;padding:6px 7px;font-size:11px}.chart-legend{display:flex;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--muted)}
+.price-value{display:inline-block;white-space:nowrap;font-variant-numeric:tabular-nums;letter-spacing:-.025em;max-width:100%;overflow:hidden;text-overflow:clip;vertical-align:middle}.price-cell{white-space:nowrap;font-variant-numeric:tabular-nums}
 .watch-table-wrap{width:100%;overflow:hidden}.watch-table{width:100%;table-layout:fixed;font-size:12px}.watch-table th{padding:7px 5px;font-size:9px;letter-spacing:.02em;white-space:normal}.watch-table td{padding:8px 5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.watch-table th:nth-child(1){width:22%}.watch-table th:nth-child(2){width:16%}.watch-table th:nth-child(3){width:13%}.watch-table th:nth-child(4){width:16%}.watch-table th:nth-child(5){width:16%}.watch-table th:nth-child(6){width:17%}.watch-table .asset{font-size:12px}.watch-sort-btn{border:0;background:transparent;color:inherit;padding:2px 3px;font:inherit;letter-spacing:inherit;text-transform:inherit;border-radius:5px;white-space:nowrap}.watch-sort-btn:hover{color:var(--green);border:0;background:#203344}.watch-sort-btn.active{color:var(--green)}.watch-table .asset small{font-size:10px;overflow:hidden;text-overflow:ellipsis}.watch-group-heading td{padding:9px 6px 5px;border-bottom:1px solid #304657;color:var(--blue);font:700 10px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;background:rgba(25,43,58,.45)}.watch-actions{display:flex;gap:5px;align-items:center;justify-content:flex-end;min-width:0}.watch-move-wrap{position:relative;display:flex;align-items:center;justify-content:flex-end;gap:4px}.watch-move-btn{flex:0 0 27px;width:27px;height:27px;padding:0;font-size:14px;line-height:1}.watch-move-select{position:absolute;right:31px;top:50%;transform:translateY(-50%);z-index:5;width:150px;max-width:42vw;padding:6px 7px;font-size:11px;box-shadow:0 8px 24px #0009}.watch-remove-btn{flex:0 0 25px;width:25px;padding:3px 0;font-size:12px}.optiongrid{grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}.optiongrid .metric{padding:9px 10px;min-width:0}.optiongrid .metric span{font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.optiongrid .metric b{font-size:clamp(11px,1.2vw,15px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.journal-scroll,.closed-options-scroll{max-height:270px;overflow:auto;border-radius:8}.closed-options-scroll{max-height:220px}.closed-options-scroll thead th{position:sticky;top:0;background:#152330;z-index:1}.journal-scroll table{min-width:900px}.journal-scroll thead th{position:sticky;top:0;background:#152330;z-index:1}.portfolio-sort{border:0;background:transparent;color:inherit;padding:2px 3px;font:inherit;letter-spacing:inherit;text-transform:inherit}.portfolio-sort:hover{color:var(--green);border:0;background:#203344}.portfolio-sort.active{color:var(--green)}.dropdown{position:relative}.dropdown-panel{position:absolute;z-index:20;top:calc(100% + 6px);left:0;min-width:230px;max-height:280px;overflow:auto;padding:10px;background:#101c27;border:1px solid var(--line);border-radius:10px;box-shadow:0 12px 30px #0009}.dropdown-panel label{display:flex;gap:9px;align-items:center;padding:6px 4px;font-size:12px}.dropdown-panel input{width:auto}.autocomplete-wrap{position:relative}.autocomplete-list{position:absolute;z-index:30;top:100%;left:0;right:0;max-height:220px;overflow:auto;background:#101c27;border:1px solid var(--line);border-radius:8px}.autocomplete-list button{display:block;width:100%;text-align:left;border:0;border-radius:0;background:transparent;padding:7px 10px;font-size:12px}.autocomplete-list button:hover{background:#203344}.footer{margin-top:18px;color:var(--muted);font-size:11px;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
 @media(max-width:900px){.span-8,.span-7,.span-6,.span-5,.span-4{grid-column:span 12}.kpis{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:560px){.watch-table th{font-size:8px;padding:5px 2px}.watch-table td{padding:6px 2px;font-size:9px}.watch-table .asset{font-size:10px}.watch-actions{gap:2px}.watch-move-btn{width:20px;flex-basis:20px;height:24px}.watch-move-select{right:26px;width:125px;font-size:9px}.watch-remove-btn{width:20px;flex-basis:20px}.wrap{padding:16px 12px 40px}.formgrid{grid-template-columns:repeat(2,minmax(0,1fr))}.kpi strong{font-size:17px}.card{padding:13px}.optiongrid{grid-template-columns:repeat(4,minmax(0,1fr));gap:4px}.optiongrid .metric{padding:7px 5px}.optiongrid .metric span{font-size:8px}.optiongrid .metric b{font-size:10px}}
@@ -174,7 +175,7 @@ canvas,svg{max-width:100%}
 <body>
 <div class="wrap">
 <header class="top">
- <div class="brand"><div class="logo">CT</div><div><div class="eyebrow">Особистий ринковий простір</div><h1>Crypto Terminal <span class="pill">v1.12.7</span></h1><div class="sub">Спотовий облік · Гаманці · Список спостереження · Опціони</div></div></div>
+ <div class="brand"><div class="logo">CT</div><div><div class="eyebrow">Особистий ринковий простір</div><h1>Crypto Terminal <span class="pill">v1.12.7.2</span></h1><div class="sub">Спотовий облік · Гаманці · Список спостереження · Опціони</div></div></div>
  <div class="actions"><span class="status" id="lastUpdate">Дані ще не оновлювались</span><button class="primary" id="refreshBtn">↻ Оновити дані</button><span id="userEmailBadge" class="tag" hidden></span><button id="logoutBtn" class="smallbtn" hidden>Вийти</button><button id="guestLogin" class="smallbtn" hidden>Увійти</button><span id="guestModeLabel" class="tag" hidden>Публічний режим</span></div>
 </header>
 <div class="grid">
@@ -188,8 +189,7 @@ canvas,svg{max-width:100%}
    <div class="kpi"><label>HYPE / USDT</label><strong id="hypePrice">—</strong><div class="change muted" id="hypeChange">—</div></div>
   </div>
   <div class="notice">Ціни беруться з Binance Spot; якщо пара відсутня — перевіряються Bybit Spot, потім BingX Spot. Джерело відображається у Watchlist та статусі оновлення. Це ринкові котирування, а не ціна виконання угоди.</div>
-  <div class="row" style="align-items:end;margin-top:12px;flex-wrap:wrap"><div class="field" style="max-width:180px"><label>Історія ціни</label><select id="marketHistoryAsset"><option>BTC</option><option>ETH</option><option>SOL</option><option>BNB</option><option>HYPE</option></select></div><div class="field" style="max-width:150px"><label>Період</label><select id="marketHistoryRange"><option value="7">7 днів</option><option value="30" selected>30 днів</option><option value="365">1 рік</option><option value="all">Увесь час</option></select></div><span class="status" id="marketHistoryStatus">Історія завантажується у фоні</span></div>
-  <div style="height:220px;background:#0b151e;border:1px solid var(--line);border-radius:10px;padding:8px"><canvas id="marketPriceHistoryChart" style="width:100%;height:100%"></canvas></div><div id="guestLoginArea" class="row" style="margin-top:10px" hidden><span class="muted">Перегляд ринку доступний без входу. Увійди, щоб відкрити приватні портфелі та інструменти.</span><button id="guestLoginMarket" class="primary">Увійти через Google</button></div>
+<div id="guestLoginArea" class="row" style="margin-top:10px" hidden><span class="muted">Перегляд ринку доступний без входу. Увійди, щоб відкрити приватні портфелі та інструменти.</span><button id="guestLoginMarket" class="primary">Увійти через Google</button></div>
  </section>
 
 <section class="card span-7" id="watchDesk">
@@ -422,7 +422,7 @@ canvas,svg{max-width:100%}
  <div class="notice" id="cloudAdminStatus">Права кожного портфеля задаються окремо. Нові портфелі не відкриваються автоматично.</div>
 </div>
 </section>
-<div class="footer"><span>Crypto Terminal · v1.12.7 · спотовий та опціонний облік</span><span>API-ключі не потрібні · лише публічні ринкові дані</span></div>
+<div class="footer"><span>Crypto Terminal · v1.12.7.2 · спотовий та опціонний облік</span><span>API-ключі не потрібні · лише публічні ринкові дані</span></div>
 </div>
 <script src="/cloud/cloud-client.js"></script>
 <script>
@@ -507,6 +507,8 @@ async function cloudRun(portfolio,operation){try{const result=await window.__ctC
 
 const fmt=(n,d=2)=>Number.isFinite(+n)?(+n).toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d}):'—';
 const money=n=>Number.isFinite(+n)?'$'+fmt(n,2):'—';
+// Unit prices use adaptive precision; portfolio values/P&L continue using money() with 2 decimals.
+const assetPrice=n=>{const v=Number(n);if(!Number.isFinite(v))return '—';const a=Math.abs(v);const d=a>=0.01?2:a>=0.001?6:a>=0.000001?8:10;return '$'+fmt(v,d);};
 function setChange(id,value){
  const el=$(id);if(!el)return;
  const n=Number(value);
@@ -515,7 +517,6 @@ function setChange(id,value){
 }
 
 const MARKET_QUOTES_CACHE_KEY='ct_market_quotes_cache_v1';
-const MARKET_HISTORY_CACHE_KEY='ct_market_history_cache_v1';
 let prices={}, watch=JSON.parse(localStorage.getItem('ct_watch')||'[]'), instruments=[];
 let marketQuotesCachedAt=0;
 try{
@@ -525,7 +526,6 @@ try{
   marketQuotesCachedAt=Number(cached.savedAt)||0;
  }
 }catch(e){console.warn('Market quote cache is invalid and will be ignored',e);}
-window.__CT_MARKET_HISTORY__={records:[],loadedAt:0,stale:true};
 const symbols=['BTC','ETH','SOL','BNB','HYPE'];
 let portfolios=Array.isArray(window.__CT_CLOUD_PORTFOLIOS__)?window.__CT_CLOUD_PORTFOLIOS__:[];
 // Migrate v0.2 positions to opening balances. They are not treated as cash purchases.
@@ -778,7 +778,7 @@ function renderPortfolio(){
  $('portfolioRows').innerHTML=displayRows.length?displayRows.map(h=>{
   const px=h.stable?1:spotPrice(h.asset),val=px*h.qty,pl=h.stable?0:val-h.cost,invested=h.stable?h.qty:h.cost,pct=invested>0?pl/invested*100:0;
   const pnlText=portfolioPnlMode==='pct'?(h.stable?'0.00%':`${pct>=0?'+':''}${pct.toFixed(2)}%`):(h.stable?money(0):(px?(pl>=0?'+':'')+money(pl):'—'));
-  return `<tr><td class="asset">${escapeHtml(h.asset)}<small>${h.stable?'Гаманець стейблкоїнів': [...new Set(h.owners)].join(', ')}</small></td><td class="num">${fmt(h.qty,5)}</td><td class="num">${h.stable?money(1):money(h.entry)}</td><td class="num">${forecastMode&&!h.stable?`<input class="forecast-price-input" data-forecast-asset="${escapeHtml(h.asset)}" type="number" min="0" step="any" value="${Number(forecastPrices[h.asset]??(prices[h.asset]?.price||0))||''}" style="width:112px;text-align:right">`:money(px)}</td><td class="num">${money(val)}</td><td class="num">${money(invested)}</td><td class="num ${pl>=0?'positive':'negative'}">${pnlText}</td><td>${h.stable?'—':`<button class="smallbtn" data-edit-spot="${escapeHtml(h.asset)}">Редагувати</button>`}</td></tr>`;
+  return `<tr><td class="asset">${escapeHtml(h.asset)}<small>${h.stable?'Гаманець стейблкоїнів': [...new Set(h.owners)].join(', ')}</small></td><td class="num">${fmt(h.qty,5)}</td><td class="num">${h.stable?money(1):`<span class="price-value">${assetPrice(h.entry)}</span>`}</td><td class="num">${forecastMode&&!h.stable?`<input class="forecast-price-input" data-forecast-asset="${escapeHtml(h.asset)}" type="number" min="0" step="any" value="${Number(forecastPrices[h.asset]??(prices[h.asset]?.price||0))||''}" style="width:112px;text-align:right">`:`<span class="price-value">${assetPrice(px)}</span>`}</td><td class="num">${money(val)}</td><td class="num">${money(invested)}</td><td class="num ${pl>=0?'positive':'negative'}">${pnlText}</td><td>${h.stable?'—':`<button class="smallbtn" data-edit-spot="${escapeHtml(h.asset)}">Редагувати</button>`}</td></tr>`;
  }).join(''):'<tr><td colspan="8" class="empty">У цьому портфелі немає активів вище порога 0,10 USDT</td></tr>';
  $('sortValueIcon').textContent=portfolioSort.key==='value'?(portfolioSort.dir===-1?'↓':'↑'):'↕';$('sortPnlIcon').textContent=portfolioSort.key==='pnl'?(portfolioSort.dir===-1?'↓':'↑'):'↕';$('sortInvestedIcon').textContent=portfolioSort.key==='invested'?(portfolioSort.dir===-1?'↓':'↑'):'↕';$('sortValue').classList.toggle('active',portfolioSort.key==='value');$('sortPnl').classList.toggle('active',portfolioSort.key==='pnl');$('sortInvested').classList.toggle('active',portfolioSort.key==='invested');
  $('sortValue').onclick=()=>{portfolioSort=portfolioSort.key!=='value'?{key:'value',dir:-1}:portfolioSort.dir===-1?{key:'value',dir:1}:{key:null,dir:0};renderPortfolio()};$('sortPnl').onclick=()=>{portfolioSort=portfolioSort.key!=='pnl'?{key:'pnl',dir:-1}:portfolioSort.dir===-1?{key:'pnl',dir:1}:{key:null,dir:0};renderPortfolio()};$('sortInvested').onclick=()=>{portfolioSort=portfolioSort.key!=='invested'?{key:'invested',dir:-1}:portfolioSort.dir===-1?{key:'invested',dir:1}:{key:null,dir:0};renderPortfolio()};
@@ -914,36 +914,6 @@ async function saveMarketDataSnapshot(assets){
  }
 }
 
-let marketHistoryLoadPromise=null;
-async function loadMarketHistory({force=false}={}){
- if(guestMode)return window.__CT_MARKET_HISTORY__;
- if(marketHistoryLoadPromise&&!force)return marketHistoryLoadPromise;
- const cachedAt=Number(window.__CT_MARKET_HISTORY__.loadedAt)||0;
- if(!force&&cachedAt&&Date.now()-cachedAt<15*60*1000)return window.__CT_MARKET_HISTORY__;
- marketHistoryLoadPromise=(async()=>{
-  try{
-   const from='2020-01-01',to=new Date().toISOString().slice(0,10);
-   const response=await fetch(`/api/market-data/main/history/series?from=${from}&to=${to}&type=auto`);
-   const result=await response.json().catch(()=>null);
-   if(!response.ok||!result?.ok||!Array.isArray(result.records))throw new Error(result?.error||`HTTP ${response.status}`);
-   const payload={records:result.records,loadedAt:Date.now(),stale:false,type:result.type||'mixed'};
-   window.__CT_MARKET_HISTORY__=payload;const historyAssets=[...new Set(result.records.flatMap(r=>Object.keys(r.prices||{})))].sort();const historySelect=$('marketHistoryAsset'),selectedHistoryAsset=historySelect?.value;if(historySelect&&historyAssets.length){historySelect.innerHTML=historyAssets.map(a=>`<option value="${escapeHtml(a)}">${escapeHtml(a)}</option>`).join('');historySelect.value=historyAssets.includes(selectedHistoryAsset)?selectedHistoryAsset:(historyAssets.includes('BTC')?'BTC':historyAssets[0]);}drawMarketPriceHistory();
-   try{localStorage.setItem(MARKET_HISTORY_CACHE_KEY,JSON.stringify(payload));}catch(e){console.warn('Could not persist market history cache',e);}
-   return payload;
-  }catch(error){
-   console.warn('Aggregated market history is not available; cached history remains usable:',error);
-   return window.__CT_MARKET_HISTORY__;
-  }finally{marketHistoryLoadPromise=null;}
- })();
- return marketHistoryLoadPromise;
-}
-function drawMarketPriceHistory(){const canvas=$('marketPriceHistoryChart');if(!canvas)return;const ctx=canvas.getContext('2d'),w=canvas.clientWidth,h=canvas.clientHeight,dpr=window.devicePixelRatio||1;canvas.width=Math.max(1,Math.floor(w*dpr));canvas.height=Math.max(1,Math.floor(h*dpr));ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,w,h);const asset=$('marketHistoryAsset')?.value||'BTC',range=$('marketHistoryRange')?.value||'30',records=window.__CT_MARKET_HISTORY__?.records||[],cut=range==='all'?0:Date.now()-Number(range)*86400000;const points=records.map(r=>{const ts=Date.parse(r.capturedAt||r.period||'');const item=r.prices?.[asset];const v=Number(item?.price??item?.value??item?.last??item?.avg);return {ts,v};}).filter(x=>Number.isFinite(x.ts)&&x.ts>=cut&&x.v>0).sort((a,b)=>a.ts-b.ts);$('marketHistoryStatus').textContent=points.length?`${points.length} точок · ${window.__CT_MARKET_HISTORY__?.stale?'кеш':'оновлено'} · ${new Date(points.at(-1).ts).toLocaleString('uk-UA')}`:'Для цього активу поки немає точок в обраному періоді';if(points.length<2){ctx.fillStyle='#91a2b2';ctx.font='12px system-ui';ctx.textAlign='center';ctx.fillText(points.length?'Потрібно щонайменше дві точки':'Історія поки недоступна',w/2,h/2);return;}const pad={l:62,r:12,t:14,b:26},min=Math.min(...points.map(x=>x.v)),max=Math.max(...points.map(x=>x.v)),span=max-min||Math.max(1,max*.01);ctx.strokeStyle='#263746';ctx.lineWidth=1;for(let i=0;i<4;i++){const y=pad.t+(h-pad.t-pad.b)*i/3;ctx.beginPath();ctx.moveTo(pad.l,y);ctx.lineTo(w-pad.r,y);ctx.stroke();ctx.fillStyle='#91a2b2';ctx.textAlign='right';ctx.fillText(money(max-span*i/3),pad.l-7,y+4);}ctx.strokeStyle='#62b5ff';ctx.lineWidth=2;ctx.beginPath();points.forEach((p,i)=>{const x=pad.l+(w-pad.l-pad.r)*i/(points.length-1),y=pad.t+(h-pad.t-pad.b)*(max-p.v)/span;i?ctx.lineTo(x,y):ctx.moveTo(x,y);});ctx.stroke();ctx.fillStyle='#91a2b2';ctx.textAlign='left';ctx.fillText(new Date(points[0].ts).toLocaleDateString('uk-UA'),pad.l,h-6);ctx.textAlign='right';ctx.fillText(new Date(points.at(-1).ts).toLocaleDateString('uk-UA'),w-pad.r,h-6);}
-$('marketHistoryAsset')?.addEventListener('change',drawMarketPriceHistory);$('marketHistoryRange')?.addEventListener('change',drawMarketPriceHistory);
-try{
- const cachedHistory=JSON.parse(localStorage.getItem(MARKET_HISTORY_CACHE_KEY)||'null');
- if(cachedHistory&&Array.isArray(cachedHistory.records)){window.__CT_MARKET_HISTORY__={...cachedHistory,stale:true};drawMarketPriceHistory();}
-}catch(e){console.warn('Market history cache is invalid and will be ignored',e);}
-
 async function refresh(){
  const btn=$('refreshBtn');if(btn.disabled)return;btn.disabled=true;btn.textContent='Оновлюю…';
  try{
@@ -1012,7 +982,7 @@ function renderWatch(){
   if(watch24hSortDirection!==null){members.sort((a,b)=>{const av=prices[a.asset]?.change,bv=prices[b.asset]?.change;const af=Number.isFinite(av),bf=Number.isFinite(bv);if(af!==bf)return af?-1:1;if(!af)return a._i-b._i;return watch24hSortDirection===-1?(bv-av||a._i-b._i):(av-bv||a._i-b._i);});}
   const rows=members.map(w=>{
    const p=prices[w.asset]?.price||0,change=prices[w.asset]?.change,dist=p&&w.target?(w.target/p-1)*100:null;
-   return `<tr><td class="asset">${escapeHtml(w.asset)}</td><td class="num">${p?money(p):'—'}${prices[w.asset]?.source?` <small class="muted">${prices[w.asset].source}</small>`:''}</td><td class="num ${Number.isFinite(change)?(change>=0?'positive':'negative'):'muted'}">${Number.isFinite(change)?(change>0?'+':'')+fmt(change,2)+'%':'—'}</td><td class="num" data-watch-target="${w._i}" title="Натисни, щоб редагувати ціль">${w.target?money(w.target):'—'}</td><td class="num ${dist!==null?(dist>=0?'positive':'negative'):''}">${dist===null?'—':(dist>=0?'+':'')+fmt(dist,1)+'%'}</td><td><div class="watch-actions"><div class="watch-move-wrap"><button type="button" class="watch-move-btn" data-watch-toggle="${w._i}" title="Перемістити до іншого списку" aria-label="Перемістити ${escapeHtml(w.asset)} до іншого списку">⇄</button><select class="watch-move-select" data-watch-move="${w._i}" aria-label="Вибрати список для ${escapeHtml(w.asset)}" hidden>${watchGroups.map(g=>`<option value="${escapeHtml(g)}" ${g===(w.group||watchGroups[0])?'selected':''}>${escapeHtml(g)}</option>`).join('')}</select></div><button type="button" class="watch-remove-btn" onclick="removeWatch(${w._i})" aria-label="Видалити ${escapeHtml(w.asset)}">×</button></div></td></tr>`;
+   return `<tr><td class="asset">${escapeHtml(w.asset)}</td><td class="num">${p?`<span class="price-value">${assetPrice(p)}</span>`:'—'}${prices[w.asset]?.source?` <small class="muted">${prices[w.asset].source}</small>`:''}</td><td class="num ${Number.isFinite(change)?(change>=0?'positive':'negative'):'muted'}">${Number.isFinite(change)?(change>0?'+':'')+fmt(change,2)+'%':'—'}</td><td class="num" data-watch-target="${w._i}" title="Натисни, щоб редагувати ціль">${w.target?`<span class="price-value">${assetPrice(w.target)}</span>`:'—'}</td><td class="num ${dist!==null?(dist>=0?'positive':'negative'):''}">${dist===null?'—':(dist>=0?'+':'')+fmt(dist,1)+'%'}</td><td><div class="watch-actions"><div class="watch-move-wrap"><button type="button" class="watch-move-btn" data-watch-toggle="${w._i}" title="Перемістити до іншого списку" aria-label="Перемістити ${escapeHtml(w.asset)} до іншого списку">⇄</button><select class="watch-move-select" data-watch-move="${w._i}" aria-label="Вибрати список для ${escapeHtml(w.asset)}" hidden>${watchGroups.map(g=>`<option value="${escapeHtml(g)}" ${g===(w.group||watchGroups[0])?'selected':''}>${escapeHtml(g)}</option>`).join('')}</select></div><button type="button" class="watch-remove-btn" onclick="removeWatch(${w._i})" aria-label="Видалити ${escapeHtml(w.asset)}">×</button></div></td></tr>`;
   }).join('');
   return `<tr class="watch-group-heading"><td colspan="6">${escapeHtml(group)} <span style="color:var(--muted);font-weight:400">· ${members.length}</span></td></tr>${rows}`;
  }).join('');
@@ -1350,7 +1320,7 @@ $('pnlModePct').addEventListener('click',()=>{portfolioPnlMode='pct';localStorag
 
 // Initialize strategy UI and load Bybit as the preferred public market-data source.
 $('scenarioDate').value=new Date().toISOString().slice(0,10);renderLegs();renderSavedStrategies();$('scenarioPrice').value=num($('builderSpot').value,90000);$('scenarioPriceManual').value=num($('builderSpot').value,90000);$('scenarioPrice').max=String(Math.max(200000,num($('builderSpot').value)*2));$('scenarioPrice').min='0';loadInstrumentList();
-window.addEventListener('resize',()=>{drawPayoff();drawAnalytics();drawMarketPriceHistory();});
+window.addEventListener('resize',()=>{drawPayoff();drawAnalytics();});
 if(cloudUser.isAdmin){
  const panel=$('cloudAdminPanel');panel.hidden=false;
  const globalKeys=['analytics','options','optionStrategies','watchlistView','watchlistEdit','importData','exportData','settings'];
@@ -1429,9 +1399,6 @@ updatePortfolioSelect();renderPortfolio();renderWatch();renderOptionsPortfolio()
 if(cloudData.progressive&&cloudData.portfolioCount>0&&!portfolios.length)$('portfolioHint').textContent='Завантажую баланси Spot-портфелів…';
 if(cloudData.progressive&&cloudUser.isAdmin||cloudData.progressive&&cloudUser.permissions?.global?.options)$('opCashBalance').textContent='Гаманець Options завантажується окремо…';
 if(spotLastUpdate)$('lastUpdate').innerHTML='<b>● Останнє оновлення</b> '+new Date(spotLastUpdate).toLocaleString('uk-UA');else if(marketQuotesCachedAt){$('lastUpdate').textContent='Кешовані котирування · '+new Date(marketQuotesCachedAt).toLocaleString('uk-UA')+' · оновлюю…';} $('journalDateFrom').value=journalDateFilter.from;$('journalDateTo').value=journalDateFilter.to;$('closedDateFrom').value=closedDateFilter.from;$('closedDateTo').value=closedDateFilter.to;loadTickerDirectory();
-// Non-critical historical series loads independently; cached data is available immediately.
-void loadMarketHistory().then(drawMarketPriceHistory);
-drawMarketPriceHistory();
 // Refresh market data automatically on every authenticated app open.
 void refresh();
 
