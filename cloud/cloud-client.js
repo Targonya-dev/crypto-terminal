@@ -159,6 +159,8 @@
       collections: collectionsResult.collections || {},
       collectionsRevision: Number(collectionsResult.revision || 0),
       deniedKeys: collectionsResult.deniedKeys || [],
+      // Preserve canonical index order; progressive responses can arrive out of order.
+      portfolioOrder: portfolioMetas.map(meta => meta.id),
       progressive: true,
       portfolioCount: portfolioMetas.length
     };
