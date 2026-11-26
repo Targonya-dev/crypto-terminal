@@ -1361,7 +1361,33 @@ function applyCloudProgress(event){
   const incoming=event.portfolio;if(!incoming?.id)return;
   const existingIndex=portfolios.findIndex(x=>x.id===incoming.id);
   if(event.phase==='state')cloudProgressState.states.add(incoming.id);if(event.phase==='complete')cloudProgressState.complete.add(incoming.id);
-  if(existingIndex>=0)portfolios[existingIndex]=incoming;else portfolios.push(incoming);
+  if(existingIndex>=0){
+   const current=portfolios[existingIndex];
+   // A trade can finish while the initial history request is still in flight.
+   // Preserve its receipt and any newer state revision when the older bootstrap
+   // response arrives afterwards.
+   const incomingRevision=Number(incoming._cloudRevision||0),currentRevision=Number(current._cloudRevision||0);
+   if(current._cloudCanHistory&&incoming._cloudCanHistory){
+    const merged=[...(incoming.transactions||[])];
+    const ids=new Set(merged.filter(t=>t.id!=null).map(t=>String(t.id)));
+    const fingerprints=new Set(merged.map(t=>[t.type,t.ts,t.asset,t.qty,t.price,t.fee].join('|')));
+    for(const t of (current.transactions||[])){
+     if(t._cloudProjection)continue;
+     const id=t.id==null?null:String(t.id),fp=[t.type,t.ts,t.asset,t.qty,t.price,t.fee].join('|');
+     if((id&&ids.has(id))||fingerprints.has(fp))continue;
+     merged.push(t);if(id)ids.add(id);fingerprints.add(fp);
+    }
+    incoming.transactions=merged.sort((a,b)=>(+a.ts||0)-(+b.ts||0));
+    incoming._cloudHasHistory=!!(current._cloudHasHistory||incoming._cloudHasHistory);
+   }
+   if(currentRevision>incomingRevision){
+    incoming.wallets=current.wallets;
+    incoming._cloudState=current._cloudState;
+    incoming._cloudRevision=current._cloudRevision;
+    incoming._cloudUpdatedAt=current._cloudUpdatedAt;
+   }
+   portfolios[existingIndex]=incoming;
+  }else portfolios.push(incoming);
   if(aggregateSelectionWasDefault&&!selectedAggregateIds.includes(incoming.id))selectedAggregateIds.push(incoming.id);
   window.__CT_CLOUD_PORTFOLIOS__=portfolios;window.__CT_CLOUD__.data.portfolios=portfolios;
   updatePortfolioSelect();renderPortfolio();renderWallets();renderJournal();
