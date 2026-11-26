@@ -419,7 +419,7 @@ canvas,svg{max-width:100%}
  <div class="notice" id="cloudAdminStatus">Права кожного портфеля задаються окремо. Нові портфелі не відкриваються автоматично.</div>
 </div>
 </section>
-<div class="footer"><span>Crypto Terminal · v1.12.4 · спотовий та опціонний облік</span><span>API-ключі не потрібні · лише публічні ринкові дані</span></div>
+<div class="footer"><span>Crypto Terminal · v1.12.5 · спотовий та опціонний облік</span><span>API-ключі не потрібні · лише публічні ринкові дані</span></div>
 </div>
 <script src="/cloud/cloud-client.js"></script>
 <script>
@@ -511,7 +511,18 @@ function setChange(id,value){
  el.className='change '+(n>0?'positive':n<0?'negative':'muted');
 }
 
+const MARKET_QUOTES_CACHE_KEY='ct_market_quotes_cache_v1';
+const MARKET_HISTORY_CACHE_KEY='ct_market_history_cache_v1';
 let prices={}, watch=JSON.parse(localStorage.getItem('ct_watch')||'[]'), instruments=[];
+let marketQuotesCachedAt=0;
+try{
+ const cached=JSON.parse(localStorage.getItem(MARKET_QUOTES_CACHE_KEY)||'null');
+ if(cached&&cached.version===1&&cached.prices&&typeof cached.prices==='object'){
+  Object.entries(cached.prices).forEach(([asset,q])=>{const price=Number(q?.price);if(price>0&&Number.isFinite(price))prices[String(asset).toUpperCase()]={price,change:q.change!==null&&q.change!==undefined&&Number.isFinite(Number(q.change))?Number(q.change):NaN,source:q.source||'Cache'};});
+  marketQuotesCachedAt=Number(cached.savedAt)||0;
+ }
+}catch(e){console.warn('Market quote cache is invalid and will be ignored',e);}
+window.__CT_MARKET_HISTORY__={records:[],loadedAt:0,stale:true};
 const symbols=['BTC','ETH','SOL','BNB','HYPE'];
 let portfolios=Array.isArray(window.__CT_CLOUD_PORTFOLIOS__)?window.__CT_CLOUD_PORTFOLIOS__:[];
 // Migrate v0.2 positions to opening balances. They are not treated as cash purchases.
@@ -873,6 +884,7 @@ async function saveMarketDataSnapshot(assets){
    body:JSON.stringify({
     source:'Crypto Terminal Spot · '+(sources.join('/')||'unknown'),
     submittedAt:new Date().toISOString(),
+    trackedAssets:assets,
     prices:snapshotPrices
    })
   });
@@ -882,11 +894,40 @@ async function saveMarketDataSnapshot(assets){
    return;
   }
   if(result.saved)console.info('Market snapshot saved:',result);
-  else if(result.reason==='cooldown')console.info('Market snapshot skipped by 10-minute cooldown; live quotes remain updated.');
+  else if(result.reason==='duplicate_hour')console.info('Market snapshot already exists for this UTC hour; live quotes remain updated.');
+  else if(result.reason)console.info('Market snapshot not added:',result.reason);
  }catch(error){
   console.warn('Market snapshot request failed; live quotes remain updated:',error);
  }
 }
+
+let marketHistoryLoadPromise=null;
+async function loadMarketHistory({force=false}={}){
+ if(guestMode)return window.__CT_MARKET_HISTORY__;
+ if(marketHistoryLoadPromise&&!force)return marketHistoryLoadPromise;
+ const cachedAt=Number(window.__CT_MARKET_HISTORY__.loadedAt)||0;
+ if(!force&&cachedAt&&Date.now()-cachedAt<15*60*1000)return window.__CT_MARKET_HISTORY__;
+ marketHistoryLoadPromise=(async()=>{
+  try{
+   const from='2020-01-01',to=new Date().toISOString().slice(0,10);
+   const response=await fetch(`/api/market-data/main/history/series?from=${from}&to=${to}&type=auto`);
+   const result=await response.json().catch(()=>null);
+   if(!response.ok||!result?.ok||!Array.isArray(result.records))throw new Error(result?.error||`HTTP ${response.status}`);
+   const payload={records:result.records,loadedAt:Date.now(),stale:false,type:result.type||'mixed'};
+   window.__CT_MARKET_HISTORY__=payload;
+   try{localStorage.setItem(MARKET_HISTORY_CACHE_KEY,JSON.stringify(payload));}catch(e){console.warn('Could not persist market history cache',e);}
+   return payload;
+  }catch(error){
+   console.warn('Aggregated market history is not available; cached history remains usable:',error);
+   return window.__CT_MARKET_HISTORY__;
+  }finally{marketHistoryLoadPromise=null;}
+ })();
+ return marketHistoryLoadPromise;
+}
+try{
+ const cachedHistory=JSON.parse(localStorage.getItem(MARKET_HISTORY_CACHE_KEY)||'null');
+ if(cachedHistory&&Array.isArray(cachedHistory.records))window.__CT_MARKET_HISTORY__={...cachedHistory,stale:true};
+}catch(e){console.warn('Market history cache is invalid and will be ignored',e);}
 
 async function refresh(){
  const btn=$('refreshBtn');if(btn.disabled)return;btn.disabled=true;btn.textContent='Оновлюю…';
@@ -895,7 +936,7 @@ async function refresh(){
  try{
   try{if(!tickerPairs.length||!bybitTickerPairs.length||!bingxTickerPairs.length)await loadTickerDirectory();}catch(e){console.warn('Ticker directory load failed',e);}
   requested=[...new Set([...symbols,...allPositions().map(x=>x.asset),...watch.map(x=>x.asset)])].map(x=>String(x).toUpperCase()).filter(x=>x&&!['USDT','USDC'].includes(x));
-  requested.forEach(asset=>{delete prices[asset];});
+  // Keep the last valid quotes visible while refreshing; failed providers must not erase usable cached prices.
   const binanceBases=new Set(tickerPairs.filter(x=>x.quote==='USDT').map(x=>x.base));
   const binanceRequested=requested.filter(base=>!tickerPairs.length||binanceBases.has(base));
   if(binanceRequested.length){try{const r=await fetch('https://api.binance.com/api/v3/ticker/24hr?symbols='+encodeURIComponent(JSON.stringify(binanceRequested.map(base=>base+'USDT'))));if(!r.ok)throw new Error('Binance API: '+r.status);const data=await r.json();data.forEach(x=>{const base=x.symbol.slice(0,-4),price=+x.lastPrice,change=+x.priceChangePercent;if(price>0&&Number.isFinite(price)){prices[base]={price,change:Number.isFinite(change)?change:NaN,source:'Binance'};spotUpdated++;}});}catch(e){spotError='Binance: '+e.message;console.warn('Binance spot quotes unavailable',e);}}
@@ -925,7 +966,12 @@ async function refresh(){
     });
    }catch(e){console.warn('BingX bulk spot quotes unavailable',e);}
   }
-  spotMissing=requested.filter(base=>!(prices[base]?.price>0)).length;spotOk=spotUpdated>0;if(spotMissing)spotError=(spotError?spotError+' · ':'')+spotMissing+' актив(ів) без котирування';
+  spotMissing=requested.filter(base=>!(prices[base]?.price>0)).length;spotOk=spotUpdated>0;
+  if(spotOk){
+   const cachePrices={};requested.forEach(asset=>{const q=prices[asset];if(q&&Number(q.price)>0)cachePrices[asset]={price:Number(q.price),change:Number.isFinite(Number(q.change))?Number(q.change):null,source:q.source||'API'};});
+   try{localStorage.setItem(MARKET_QUOTES_CACHE_KEY,JSON.stringify({version:1,savedAt:Date.now(),prices:cachePrices}));marketQuotesCachedAt=Date.now();}catch(e){console.warn('Could not persist market quote cache',e);}
+  }
+  if(spotMissing)spotError=(spotError?spotError+' · ':'')+spotMissing+' актив(ів) без котирування';
  }catch(e){spotError=e.message;console.error('Spot refresh failed',e);}
  try{const held=new Set();portfolios.forEach(p=>{p.transactions.__positionOverrides=p.positionOverrides||{};calcLedger(p.transactions).holdings.forEach(h=>{if(h.qty>0)held.add(h.asset);});});analyticsMarketReady=spotOk&&[...held].every(a=>prices[a]?.price>0);}catch(e){analyticsMarketReady=false;console.error(e);}
  symbols.forEach(s=>{const q=prices[s];$(s.toLowerCase()+'Price').textContent=q?money(q.price):'—';if(q)setChange(s.toLowerCase()+'Change',q.change);});
@@ -1320,7 +1366,9 @@ if(cloudUser.isAdmin){
  loadAdminUsers().catch(e=>$('cloudAdminStatus').textContent='Не вдалося завантажити користувачів: '+e.message);
 }else{$('cloudAdminPanel').remove();}
 if(!cloudUser.isAdmin){$('createPortfolio').hidden=true;$('renamePortfolio').hidden=true;$('deletePortfolio').hidden=true;}
-updatePortfolioSelect();renderPortfolio();renderWatch();renderOptionsPortfolio();drawAnalytics();applyCloudPermissions();if(spotLastUpdate)$('lastUpdate').innerHTML='<b>● Останнє оновлення</b> '+new Date(spotLastUpdate).toLocaleString('uk-UA');$('journalDateFrom').value=journalDateFilter.from;$('journalDateTo').value=journalDateFilter.to;$('closedDateFrom').value=closedDateFilter.from;$('closedDateTo').value=closedDateFilter.to;loadTickerDirectory();
+updatePortfolioSelect();renderPortfolio();renderWatch();renderOptionsPortfolio();drawAnalytics();applyCloudPermissions();if(spotLastUpdate)$('lastUpdate').innerHTML='<b>● Останнє оновлення</b> '+new Date(spotLastUpdate).toLocaleString('uk-UA');else if(marketQuotesCachedAt){$('lastUpdate').textContent='Кешовані котирування · '+new Date(marketQuotesCachedAt).toLocaleString('uk-UA')+' · оновлюю…';} $('journalDateFrom').value=journalDateFilter.from;$('journalDateTo').value=journalDateFilter.to;$('closedDateFrom').value=closedDateFilter.from;$('closedDateTo').value=closedDateFilter.to;loadTickerDirectory();
+// Non-critical historical series loads independently; cached data is available immediately.
+void loadMarketHistory();
 // Refresh market data automatically on every authenticated app open.
 void refresh();
 
