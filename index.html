@@ -1226,7 +1226,9 @@ let analyticsAssetIds=JSON.parse(localStorage.getItem('ct_analytics_assets')||'n
 let analyticsAssetSignature='';
 function optionStrategyLabel(p){return String(p.strategyName||'').trim()||'Без стратегії';}
 function renderAllPortfolios(){
- selectedAggregateIds=selectedAggregateIds.filter(id=>portfolios.some(p=>p.id===id));
+ // During progressive startup the portfolio list is initially incomplete.
+ // Do not prune saved selections until every portfolio ID has been loaded.
+ if(cloudPortfolioLoadComplete)selectedAggregateIds=selectedAggregateIds.filter(id=>portfolios.some(p=>p.id===id));
  const selected=portfolios.filter(p=>selectedAggregateIds.includes(p.id));
  const spot=portfolioTotals(selected),op=aggregateOptionsSelected?optionSummary():{value:0,unrealized:0,realized:0,total:0,count:0};
  const optionStableBalance=aggregateOptionsSelected?(['USDT','USDC'].reduce((sum,currency)=>sum+(+optionCashLedger.wallets?.[currency]||0),0)):0;
