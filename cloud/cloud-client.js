@@ -77,7 +77,11 @@
       id: meta.id, name: meta.name, wallets: wallet, transactions: journal,
       positionOverrides: mergedOverrides,
       _cloudRevision: Number(state.revision || 0), _cloudUpdatedAt: state.updatedAt || meta.updatedAt || null,
-      _cloudHasHistory: Array.isArray(transactions), _cloudCanHistory: Array.isArray(transactions)
+      // History permission is known before the journal request completes.
+      // Keep it separate from _cloudHasHistory so operations made during
+      // progressive startup can append their authorized transaction receipt.
+      _cloudHasHistory: Array.isArray(transactions),
+      _cloudCanHistory: Array.isArray(transactions) || meta._cloudCanHistory === true
     };
   }
 
@@ -114,9 +118,9 @@
         const encodedId = encodeURIComponent(meta.id);
         const stateResult = await request(`/workspaces/main/portfolios/${encodedId}/state`);
         const state = stateResult.state || {};
-        const stateOnly = toLegacyPortfolio(meta, state, null, null);
-        emit({ type: 'portfolio', phase: 'state', portfolio: stateOnly });
         const hasHistory = isAdmin || permissions.portfolios?.[meta.id]?.history === true;
+        const stateOnly = toLegacyPortfolio({ ...meta, _cloudCanHistory: hasHistory }, state, null, null);
+        emit({ type: 'portfolio', phase: 'state', portfolio: stateOnly });
         if (!hasHistory) {
           emit({ type: 'portfolio', phase: 'complete', portfolio: stateOnly });
           return;
@@ -182,7 +186,17 @@
       portfolio._cloudRevision = Number(response.state.revision || response.revision || portfolio._cloudRevision + 1);
       portfolio._cloudUpdatedAt = response.state.updatedAt || response.updatedAt || null;
       // A server operation response may omit history by design. Append only the authorized receipt row.
-      if (portfolio._cloudHasHistory && response.transaction) portfolio.transactions.push(jsonClone(response.transaction));
+      if (portfolio._cloudCanHistory && response.transaction) {
+        const receipt = jsonClone(response.transaction);
+        const receiptId = receipt.id == null ? null : String(receipt.id);
+        const alreadyPresent = portfolio.transactions.some(t =>
+          (receiptId && t.id != null && String(t.id) === receiptId) ||
+          (!receiptId && t.type === receipt.type && t.ts === receipt.ts && t.asset === receipt.asset &&
+            Number(t.qty) === Number(receipt.qty) && Number(t.price) === Number(receipt.price))
+        );
+        if (!alreadyPresent) portfolio.transactions.push(receipt);
+        portfolio._cloudHasHistory = true;
+      }
       if (portfolio._cloudHasHistory && response.adjustment) {
         portfolio.positionOverrides = portfolio.positionOverrides || {};
         const old = portfolio.positionOverrides[response.adjustment.asset];
