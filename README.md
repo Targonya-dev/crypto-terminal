@@ -65,3 +65,11 @@ node worker/test-import-integration.mjs
 node frontend/cloud/test-cloud-client.mjs
 node migration/test-migration.mjs /path/to/crypto-terminal-backup-2026-11-15T23-23-59-561Z.json
 ```
+
+## Crypto Terminal v1.12.7
+
+- Adds a separate spot-market price history chart backed by `/api/market-data/main/history/series`; this chart is distinct from portfolio P&L history.
+- Adds a live trade-cost preview (buy: quantity × unit price + commission; sell: quantity × unit price − commission).
+- Adds a temporary selected-Spot-portfolio forecast mode. Forecast prices are held only in page memory and are discarded when forecast mode is turned off or the page is reloaded; they are not written to transactions, local storage, or the Worker.
+- Keeps the v1.12.6 parallel Cloud bootstrap and the existing Worker API contract.
+- Refactors Cloud startup into progressive delivery: authenticated identity and shared collections initialize first; each Spot portfolio state is rendered as its request completes; each portfolio's transaction history is applied later; Options cash arrives independently. The UI no longer waits for all portfolio/history branches before showing the first available balances.
