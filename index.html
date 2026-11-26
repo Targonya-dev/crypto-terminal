@@ -422,7 +422,7 @@ canvas,svg{max-width:100%}
  <div class="notice" id="cloudAdminStatus">Права кожного портфеля задаються окремо. Нові портфелі не відкриваються автоматично.</div>
 </div>
 </section>
-<div class="footer"><span>Crypto Terminal · v1.12.7.2 · спотовий та опціонний облік</span><span>API-ключі не потрібні · лише публічні ринкові дані</span></div>
+<div class="footer"><span>Crypto Terminal · v1.12.7.5 · спотовий та опціонний облік</span><span>API-ключі не потрібні · лише публічні ринкові дані</span></div>
 </div>
 <script src="/cloud/cloud-client.js"></script>
 <script>
@@ -439,6 +439,7 @@ canvas,svg{max-width:100%}
  }
  window.__CT_CLOUD__={api:cloud,data:cloudData,collectionsRevision:cloudData.collectionsRevision||0,permissions:cloudData.permissions||{},user:cloudData.user||{}};
  window.__CT_CLOUD_PORTFOLIOS__=cloudData.portfolios||[];
+ window.__CT_CLOUD_PORTFOLIO_ORDER__=Array.isArray(cloudData.portfolioOrder)?cloudData.portfolioOrder.slice():[];
  // Clear managed collection caches before applying this identity's permission-filtered cloud view.
  // Otherwise a previous user in the same browser could leave denied collections visible locally.
  const cloudCollectionKeys=['ct_watch','ct_watch_groups','ct_options_portfolio_v1','ct_options_portfolio_v1_closed','ct_options_portfolio_v1_updated','ct_option_strategies_v1','ct_analytics_history'];
@@ -528,6 +529,9 @@ try{
 }catch(e){console.warn('Market quote cache is invalid and will be ignored',e);}
 const symbols=['BTC','ETH','SOL','BNB','HYPE'];
 let portfolios=Array.isArray(window.__CT_CLOUD_PORTFOLIOS__)?window.__CT_CLOUD_PORTFOLIOS__:[];
+let cloudPortfolioOrder=Array.isArray(window.__CT_CLOUD_PORTFOLIO_ORDER__)?window.__CT_CLOUD_PORTFOLIO_ORDER__.slice():[];
+let cloudPortfolioLoadComplete=!(window.__CT_CLOUD__?.data?.progressive);
+const savedActivePortfolioId=localStorage.getItem('ct_last_active_portfolio')||'';
 // Migrate v0.2 positions to opening balances. They are not treated as cash purchases.
 portfolios.forEach(p=>{
  p.wallets={USDT:+(p.wallets?.USDT||0),USDC:+(p.wallets?.USDC||0)};p.transactions=Array.isArray(p.transactions)?p.transactions:[];p.positionOverrides=p.positionOverrides&&typeof p.positionOverrides==='object'?p.positionOverrides:{};
@@ -536,7 +540,7 @@ portfolios.forEach(p=>{
  }
  delete p.positions;
 });
-let activePortfolio=localStorage.getItem('ct_last_active_portfolio')||portfolios[0]?.id||'all';
+let activePortfolio=savedActivePortfolioId||portfolios[0]?.id||cloudPortfolioOrder[0]||'all';
 let portfolioSort={key:null,dir:0};
 let portfolioPnlMode=localStorage.getItem('ct_portfolio_pnl_mode')==='pct'?'pct':'usd';
 let selectedAggregateIds=JSON.parse(localStorage.getItem('ct_aggregate_portfolios')||'null');
@@ -583,11 +587,28 @@ function journalTimestamp(value){if(typeof value==='number'&&Number.isFinite(val
 function allTransactions(){return portfolios.flatMap(p=>p.transactions.filter(t=>!t._cloudProjection).map(t=>({...t,ts:journalTimestamp(t.ts??t.timestamp??t.createdAt),portfolioName:p.name,portfolioId:p.id}))).sort((a,b)=>(Number.isFinite(b.ts)?b.ts:-Infinity)-(Number.isFinite(a.ts)?a.ts:-Infinity))}
 function updatePortfolioSelect(){
  const sel=$('portfolioSelect');
- if(!portfolios.length){activePortfolio='';sel.innerHTML='<option value="">Немає портфелів — імпортуй або створи</option>';sel.value='';sel.disabled=true;$('renamePortfolio').disabled=true;$('deletePortfolio').disabled=true;return;}
- sel.disabled=false;if(!portfolios.some(p=>p.id===activePortfolio))activePortfolio=portfolios[0].id;localStorage.setItem('ct_last_active_portfolio',activePortfolio);
- sel.innerHTML=portfolios.map(p=>`<option value="${p.id}">${p.name.replaceAll('<','&lt;')}</option>`).join('');
- sel.value=activePortfolio;
- $('renamePortfolio').disabled=false;$('deletePortfolio').disabled=portfolios.length<=1;
+ if(!portfolios.length){
+  if(cloudPortfolioLoadComplete){activePortfolio='';sel.innerHTML='<option value="">Немає портфелів — імпортуй або створи</option>';sel.value='';sel.disabled=true;}
+  else{sel.innerHTML='<option value="">Завантажую портфелі…</option>';sel.value='';sel.disabled=true;}
+  $('renamePortfolio').disabled=true;$('deletePortfolio').disabled=true;return;
+ }
+ sel.disabled=false;
+ if(!portfolios.some(p=>p.id===activePortfolio)){
+  const preferred=savedActivePortfolioId||cloudPortfolioOrder[0]||'';
+  if(preferred&&cloudPortfolioOrder.includes(preferred)){
+   if(portfolios.some(p=>p.id===preferred))activePortfolio=preferred;
+   else if(cloudPortfolioLoadComplete)activePortfolio=portfolios[0].id;
+   else activePortfolio=preferred;
+  }else if(cloudPortfolioLoadComplete||!cloudPortfolioOrder.length)activePortfolio=portfolios[0].id;
+ }
+ if(portfolios.some(p=>p.id===activePortfolio))localStorage.setItem('ct_last_active_portfolio',activePortfolio);
+ const ordered=portfolios.slice().sort((a,b)=>{
+  const ai=cloudPortfolioOrder.indexOf(a.id),bi=cloudPortfolioOrder.indexOf(b.id);
+  if(ai<0&&bi<0)return 0;if(ai<0)return 1;if(bi<0)return -1;return ai-bi;
+ });
+ sel.innerHTML=ordered.map(p=>`<option value="${escapeHtml(p.id)}">${escapeHtml(p.name)}</option>`).join('');
+ sel.value=portfolios.some(p=>p.id===activePortfolio)?activePortfolio:'';
+ $('renamePortfolio').disabled=!portfolios.some(p=>p.id===activePortfolio);$('deletePortfolio').disabled=portfolios.length<=1;
 }
 function calcLedger(list){
  const holdings={},realized={USDT:0,USDC:0},events=[];const overrides=list.__positionOverrides||{};
@@ -653,7 +674,11 @@ function renderJournal(){
  const count=$('journalDateCount');if(count)count.textContent=`Показано ${tx.length} із ${all.length}`;
 }
 function renderAllPortfolios(){
- selectedAggregateIds=selectedAggregateIds.filter(id=>portfolios.some(p=>p.id===id));
+ if(cloudPortfolioLoadComplete){
+  const validIds=new Set(cloudPortfolioOrder.length?cloudPortfolioOrder:portfolios.map(p=>p.id));
+  selectedAggregateIds=selectedAggregateIds.filter(id=>validIds.has(id));
+  localStorage.setItem('ct_aggregate_portfolios',JSON.stringify(selectedAggregateIds));
+ }
  const selected=portfolios.filter(p=>selectedAggregateIds.includes(p.id));
  const totals=portfolioTotals(selected);
  $('allValue').textContent=money(totals.value);
@@ -1390,6 +1415,10 @@ function applyCloudProgress(event){
    portfolios[existingIndex]=incoming;
   }else portfolios.push(incoming);
   if(aggregateSelectionWasDefault&&!selectedAggregateIds.includes(incoming.id))selectedAggregateIds.push(incoming.id);
+  if(cloudPortfolioOrder.length){
+   const rank=new Map(cloudPortfolioOrder.map((id,i)=>[id,i]));
+   portfolios.sort((a,b)=>(rank.get(a.id)??Number.MAX_SAFE_INTEGER)-(rank.get(b.id)??Number.MAX_SAFE_INTEGER));
+  }
   window.__CT_CLOUD_PORTFOLIOS__=portfolios;window.__CT_CLOUD__.data.portfolios=portfolios;
   updatePortfolioSelect();renderPortfolio();renderWallets();renderJournal();
   if(window.__CT_REFRESH_ADMIN_EDITOR__)window.__CT_REFRESH_ADMIN_EDITOR__();
@@ -1415,6 +1444,21 @@ function applyCloudProgress(event){
   return;
  }
  if(event.type==='portfolios-complete'){
+  cloudPortfolioLoadComplete=true;
+  if(aggregateSelectionWasDefault){
+   selectedAggregateIds=portfolios.map(p=>p.id);
+   localStorage.setItem('ct_aggregate_portfolios',JSON.stringify(selectedAggregateIds));
+  }else{
+   const validIds=new Set(cloudPortfolioOrder.length?cloudPortfolioOrder:portfolios.map(p=>p.id));
+   selectedAggregateIds=selectedAggregateIds.filter(id=>validIds.has(id));
+   localStorage.setItem('ct_aggregate_portfolios',JSON.stringify(selectedAggregateIds));
+  }
+  if(!portfolios.some(p=>p.id===activePortfolio)){
+   activePortfolio=portfolios[0]?.id||'';
+   if(activePortfolio)localStorage.setItem('ct_last_active_portfolio',activePortfolio);
+   else localStorage.removeItem('ct_last_active_portfolio');
+  }
+  updatePortfolioSelect();renderPortfolio();renderAllPortfolios();
   if(!portfolios.length)$('portfolioHint').textContent='Немає доступних портфелів або доступ до них не надано.';
   else $('portfolioHint').textContent='Усі доступні баланси портфелів завантажено. Історія транзакцій завантажується незалежно.';
   if(allPositions().some(h=>!(prices[h.asset]?.price>0)))setTimeout(()=>void refresh(),1200);
