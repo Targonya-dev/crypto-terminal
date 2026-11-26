@@ -1414,7 +1414,7 @@ function applyCloudProgress(event){
  }
  if(event.type==='options-cash-error'){
   console.warn('Options cash load failed',event.error);
-  $('opCashBalances').textContent='Не вдалося завантажити Options cash: '+event.error;
+  $('opCashBalance').textContent='Не вдалося завантажити Options cash: '+event.error;
   return;
  }
  if(event.type==='portfolios-complete'){
@@ -1427,7 +1427,7 @@ window.__CT_CLOUD_PROGRESS_HANDLER__=applyCloudProgress;
 (window.__CT_CLOUD_PROGRESS_QUEUE__||[]).splice(0).forEach(applyCloudProgress);
 updatePortfolioSelect();renderPortfolio();renderWatch();renderOptionsPortfolio();drawAnalytics();applyCloudPermissions();
 if(cloudData.progressive&&cloudData.portfolioCount>0&&!portfolios.length)$('portfolioHint').textContent='Завантажую баланси Spot-портфелів…';
-if(cloudData.progressive&&cloudUser.isAdmin||cloudData.progressive&&cloudUser.permissions?.global?.options)$('opCashBalances').textContent='Гаманець Options завантажується окремо…';
+if(cloudData.progressive&&cloudUser.isAdmin||cloudData.progressive&&cloudUser.permissions?.global?.options)$('opCashBalance').textContent='Гаманець Options завантажується окремо…';
 if(spotLastUpdate)$('lastUpdate').innerHTML='<b>● Останнє оновлення</b> '+new Date(spotLastUpdate).toLocaleString('uk-UA');else if(marketQuotesCachedAt){$('lastUpdate').textContent='Кешовані котирування · '+new Date(marketQuotesCachedAt).toLocaleString('uk-UA')+' · оновлюю…';} $('journalDateFrom').value=journalDateFilter.from;$('journalDateTo').value=journalDateFilter.to;$('closedDateFrom').value=closedDateFilter.from;$('closedDateTo').value=closedDateFilter.to;loadTickerDirectory();
 // Non-critical historical series loads independently; cached data is available immediately.
 void loadMarketHistory().then(drawMarketPriceHistory);
